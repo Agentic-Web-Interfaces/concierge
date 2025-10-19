@@ -21,13 +21,55 @@ class Workflow:
         self.description = description
         self.stages: Dict[str, Stage] = {}
         self.initial_stage: Optional[str] = None
+        self.cursor: Optional[Stage] = None
+        self._incoming_edges: Dict[str, List[str]] = {}
     
     def add_stage(self, stage: Stage, initial: bool = False) -> 'Workflow':
         """Add a stage to the workflow"""
         self.stages[stage.name] = stage
         if initial or self.initial_stage is None:
             self.initial_stage = stage.name
+        self._build_incoming_edges()
         return self
+    
+    def _build_incoming_edges(self):
+        """Build reverse edge mapping for graph navigation"""
+        self._incoming_edges = {name: [] for name in self.stages.keys()}
+        for stage_name, stage in self.stages.items():
+            for target in stage.transitions:
+                if target in self._incoming_edges:
+                    self._incoming_edges[target].append(stage_name)
+    
+    def initialize(self):
+        """Initialize cursor to initial stage"""
+        self._build_incoming_edges()
+        roots = [name for name, incoming in self._incoming_edges.items() if not incoming]
+        stage_name = roots[0] if roots else list(self.stages.keys())[0]
+        self.cursor = self.stages[stage_name]
+    
+    def get_cursor(self) -> Stage:
+        """Get current cursor position"""
+        return self.cursor
+    
+    def get_next_stages(self) -> List[str]:
+        """Get valid next stages from current cursor"""
+        return self.cursor.transitions
+    
+    def get_previous_stages(self) -> List[str]:
+        """Get stages that can transition to current cursor"""
+        return self._incoming_edges.get(self.cursor.name, [])
+    
+    def get_stage_metadata(self, stage_name: str) -> dict:
+        """Get metadata for a stage: tools and state"""
+        stage = self.get_stage(stage_name)
+        return {
+            "name": stage.name,
+            "description": stage.description,
+            "tools": [{"name": t.name, "description": t.description} for t in stage.tools.values()],
+            "state": stage.local_state.data,
+            "transitions": stage.transitions,
+            "prerequisites": [p.__name__ for p in stage.prerequisites]
+        }
     
     def get_stage(self, stage_name: str) -> Stage:
         """Get stage by name"""
@@ -42,7 +84,7 @@ class Workflow:
         if tool_name not in stage.tools:
             return {
                 "type": "error",
-                "message": f"Tool '{tool_name}' not found in stage '{stage_name}'",
+                "message": f"Tool '{tool_name}' not found in stage '{stage.name}'",
                 "available": list(stage.tools.keys())
             }
         
@@ -86,6 +128,13 @@ class Workflow:
             }
         
         return {"valid": True}
+    
+    def transition_to(self, to_stage: str) -> Stage:
+        """Transition cursor to new stage and return target stage"""
+        target = self.get_stage(to_stage)
+        target.local_state = State()
+        self.cursor = target
+        return target
 
 
 # Decorator
@@ -137,7 +186,6 @@ class workflow:
         
         workflow_obj = Workflow(name=workflow_name, description=workflow_desc)
         
-        # Auto-discover stage classes (in order of definition)
         for attr_name, attr_value in cls.__dict__.items():
             if attr_name.startswith('_') or attr_name == 'transitions':
                 continue

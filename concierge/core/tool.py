@@ -12,7 +12,7 @@ from typing import Any, get_type_hints
 
 from concierge.core.state import State
 from concierge.core.construct import validate_construct
-from concierge.core.constructs import DefaultConstruct
+from concierge.core.types import DefaultConstruct
 
 
 @dataclass

@@ -17,19 +17,18 @@ class Orchestrator:
     """
     workflow: Workflow
     session_id: str
-    current_stage: str = field(init=False)
     state: State = field(default_factory=State)
     history: list = field(default_factory=list)
     
     def __post_init__(self):
         """Initialize session with workflow's initial stage"""
-        self.current_stage = self.workflow.initial_stage or list(self.workflow.stages.keys())[0]
+        self.workflow.initialize()
         self.state = State()
         self.history = []
     
     def get_current_stage(self) -> Stage:
         """Get current stage object"""
-        return self.workflow.stages[self.current_stage]
+        return self.workflow.get_cursor()
     
     async def process_action(self, action: dict) -> dict:
         """
@@ -55,10 +54,8 @@ class Orchestrator:
         tool_name = action.get("tool")
         args = action.get("args", {})
         
-        # Delegate to workflow
-        result = await self.workflow.call_tool(self.current_stage, tool_name, args)
+        result = await self.workflow.call_tool(self.workflow.get_cursor(), tool_name, args)
         
-        # Track history
         if result["type"] == "tool_result":
             self.history.append({
                 "action": "tool",
@@ -70,12 +67,11 @@ class Orchestrator:
         return result
     
     async def _handle_transition(self, action: dict, stage: Stage) -> dict:
-        """Handle stage transition - delegates validation to workflow"""
+        """Handle stage transition - delegates to workflow"""
         target_stage_name = action.get("stage")
         
-        # Delegate validation to workflow
         validation = self.workflow.validate_transition(
-            self.current_stage,
+            self.workflow.get_cursor(),
             target_stage_name,
             self.state
         )
@@ -93,10 +89,7 @@ class Orchestrator:
                 "allowed": validation.get("allowed", [])
             }
         
-        # Perform transition (fresh isolated state for new stage)
-        target = self.workflow.get_stage(target_stage_name)
-        target.local_state = State()
-        self.current_stage = target_stage_name
+        target = self.workflow.transition_to(target_stage_name)
         self.history.append({
             "action": "transition",
             "from": stage.name,
@@ -124,7 +117,7 @@ class Orchestrator:
         return {
             "session_id": self.session_id,
             "workflow": self.workflow.name,
-            "current_stage": self.current_stage,
+            "current_stage": stage.name,
             "available_tools": [t.name for t in stage.tools.values()],
             "can_transition_to": stage.transitions,
             "state_summary": {

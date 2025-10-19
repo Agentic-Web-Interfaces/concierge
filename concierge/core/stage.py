@@ -83,7 +83,6 @@ class Stage:
             ""
         ]
         
-        # Add current state context
         if state.data:
             prompt_parts.append("Current State:")
             for construct_name, construct_data in state.data.items():
