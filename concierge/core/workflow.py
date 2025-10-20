@@ -190,34 +190,18 @@ class workflow:
             if attr_name.startswith('_') or attr_name == 'transitions':
                 continue
             
-            stage_obj = getattr(attr_value, '_stage', None)
-            if stage_obj is not None:
-                # First stage becomes initial by default
+            if isinstance(attr_value, Stage):
                 is_initial = len(workflow_obj.stages) == 0
-                workflow_obj.add_stage(stage_obj, initial=is_initial)
+                workflow_obj.add_stage(attr_value, initial=is_initial)
         
-        # Wire transitions (if defined)
         transitions_def = getattr(cls, 'transitions', None)
         if transitions_def and isinstance(transitions_def, dict):
-            # Helper to extract stage name from either string or class
-            def get_stage_name(key: Union[str, Type]) -> str:
-                if isinstance(key, str):
-                    return key
-                # It's a class - extract the _stage.name
-                return getattr(key, '_stage', None).name if hasattr(key, '_stage') else key.__name__.lower()
-            
-            # Process transitions
-            for from_key, to_keys in transitions_def.items():
-                from_name = get_stage_name(from_key)
+            for from_stage, to_stages in transitions_def.items():
+                if not isinstance(to_stages, list):
+                    to_stages = [to_stages]
                 
-                # Handle both single value and list
-                if not isinstance(to_keys, list):
-                    to_keys = [to_keys]
-                
-                to_names = [get_stage_name(k) for k in to_keys]
-                
-                if from_name in workflow_obj.stages:
-                    workflow_obj.stages[from_name].transitions = to_names
+                to_names = [ts.name for ts in to_stages]
+                workflow_obj.stages[from_stage.name].transitions = to_names
         
         cls._workflow = workflow_obj
         return cls

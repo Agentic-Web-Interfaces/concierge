@@ -46,6 +46,16 @@ class Stage:
         for prereq in self.prerequisites:
             validate_construct(prereq, f"Stage '{self.name}' prerequisite {prereq.__name__}")
     
+    def __hash__(self):
+        """Make Stage hashable (for use as dict keys)"""
+        return hash(self.name)
+    
+    def __eq__(self, other):
+        """Stage equality based on name"""
+        if not isinstance(other, Stage):
+            return False
+        return self.name == other.name
+    
     def add_tool(self, tool: Tool) -> 'Stage':
         """Add a tool to this stage"""
         self.tools[tool.name] = tool
@@ -105,16 +115,6 @@ class Stage:
         if self.transitions:
             prompt_parts.append(f"You can transition to: {', '.join(self.transitions)}")
             prompt_parts.append('To transition: {"action": "transition", "stage": "stage_name"}')
-            prompt_parts.append("")
-        
-        # Add elicitation option
-        prompt_parts.append("Need user input? Respond with:")
-        prompt_parts.append('{"action": "elicit", "field": "field_name", "message": "Your question"}')
-        prompt_parts.append("")
-        
-        # Add completion option
-        prompt_parts.append("To respond to user:")
-        prompt_parts.append('{"action": "respond", "message": "Your response"}')
         
         return "\n".join(prompt_parts)
 
@@ -157,7 +157,7 @@ class stage:
                 tool_obj.func = getattr(instance, attr_name)
                 stage_obj.add_tool(tool_obj)
         
-        cls._stage = stage_obj
-        cls._instance = instance
-        return cls
+        stage_obj._original_class = cls
+        stage_obj._instance = instance
+        return stage_obj
 

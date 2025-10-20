@@ -20,25 +20,21 @@ class TestStage:
 
 
 def test_stage_tool_discovery():
-    stage_obj = TestStage._stage
-    assert len(stage_obj.tools) == 2
-    assert "tool1" in stage_obj.tools
-    assert "tool2" in stage_obj.tools
+    assert len(TestStage.tools) == 2
+    assert "tool1" in TestStage.tools
+    assert "tool2" in TestStage.tools
 
 
 def test_stage_local_state():
-    stage_obj = TestStage._stage
-    
     # Execute tool2 which mutates local state
-    asyncio.run(stage_obj.tools["tool2"].execute(stage_obj.local_state, y="test"))
+    asyncio.run(TestStage.tools["tool2"].execute(TestStage.local_state, y="test"))
     
     # Verify stage local state was updated
-    assert stage_obj.local_state.get("key") == "test"
+    assert TestStage.local_state.get("key") == "test"
 
 
 def test_stage_instance_binding():
-    stage_obj = TestStage._stage
-    tool_obj = stage_obj.tools["tool1"]
+    tool_obj = TestStage.tools["tool1"]
     
     # Verify func is bound to instance (not unbound)
     assert hasattr(tool_obj.func, '__self__')

@@ -2,6 +2,8 @@
 import asyncio
 from concierge.core import State, tool, stage, workflow
 from concierge.core.engine import Orchestrator
+from concierge.core.actions import MethodCallAction, StageTransitionAction
+from concierge.core.results import ToolResult, TransitionResult, ErrorResult
 
 
 @stage(name="start")
@@ -33,41 +35,36 @@ def test_orchestrator_tool_call():
     wf = TestFlow._workflow
     orch = Orchestrator(wf, session_id="test")
     
-    result = asyncio.run(orch.process_action({
-        "action": "tool",
-        "tool": "init",
-        "args": {"value": 42}
-    }))
+    action = MethodCallAction(tool_name="init", args={"value": 42})
+    result = asyncio.run(orch.execute_method_call(action))
     
-    assert result["type"] == "tool_result"
-    assert result["result"]["result"] == 42
+    assert isinstance(result, ToolResult)
+    assert result.tool_name == "init"
+    assert result.result["result"] == 42
 
 
 def test_orchestrator_transition():
     wf = TestFlow._workflow
     orch = Orchestrator(wf, session_id="test")
     
-    result = asyncio.run(orch.process_action({
-        "action": "transition",
-        "stage": "end"
-    }))
+    action = StageTransitionAction(target_stage="end")
+    result = asyncio.run(orch.execute_stage_transition(action))
     
-    assert result["type"] == "transitioned"
-    assert result["from"] == "start"
-    assert result["to"] == "end"
-    assert orch.current_stage == "end"
+    assert isinstance(result, TransitionResult)
+    assert result.from_stage == "start"
+    assert result.to_stage == "end"
+    assert orch.get_current_stage().name == "end"
 
 
 def test_orchestrator_invalid_transition():
     wf = TestFlow._workflow
     orch = Orchestrator(wf, session_id="test")
     
-    result = asyncio.run(orch.process_action({
-        "action": "transition",
-        "stage": "start"
-    }))
+    action = StageTransitionAction(target_stage="start")
+    result = asyncio.run(orch.execute_stage_transition(action))
     
-    assert result["type"] == "error"
+    assert isinstance(result, ErrorResult)
+    assert "Cannot transition" in result.message
 
 
 def test_orchestrator_session_info():

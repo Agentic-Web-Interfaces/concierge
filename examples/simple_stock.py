@@ -111,7 +111,7 @@ async def main():
     session = Orchestrator(workflow, session_id="user-123")
     
     print(f"Session ticket: {session.session_id}")
-    print(f"Current stage: {session.current_stage}\n")
+    print(f"Current stage: {session.get_current_stage().name}\n")
     
     # 1. Search for stock
     print("1. Searching for stock...")
