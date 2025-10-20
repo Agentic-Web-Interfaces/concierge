@@ -41,7 +41,10 @@ class Workflow:
                     self._incoming_edges[target].append(stage_name)
     
     def initialize(self):
-        """Initialize cursor to initial stage"""
+        """Initialize cursor to initial stage and reset stage local states"""
+        for stage in self.stages.values():
+            stage.local_state = State()
+        
         self._build_incoming_edges()
         roots = [name for name, incoming in self._incoming_edges.items() if not incoming]
         stage_name = roots[0] if roots else list(self.stages.keys())[0]

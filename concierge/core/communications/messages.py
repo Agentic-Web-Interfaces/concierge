@@ -1,6 +1,6 @@
 """Message templates - pure strings with placeholders."""
 
-INITIAL_MESSAGE = """Welcome to {app_name} powered by Concierge.
+HANDSHAKE_MESSAGE = """Welcome to {app_name} powered by Concierge.
 {app_description}
 
 Available workflows ({workflow_count}):

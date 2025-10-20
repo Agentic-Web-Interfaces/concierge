@@ -42,7 +42,6 @@ def construct(description: Optional[str] = None):
     - Can be extended with additional optional arguments in the future
     """
     def decorator(cls: Type[T]) -> Type[T]:
-        # Validate it's a Pydantic BaseModel
         if not issubclass(cls, BaseModel):
             raise TypeError(
                 f"@construct can only be applied to Pydantic BaseModel classes. "
