@@ -15,5 +15,6 @@ from concierge.core import (
 )
 from concierge.engine import Orchestrator
 from concierge.server import Server
+from concierge.http_server import run_http_server
 
 __version__ = "0.1.0"

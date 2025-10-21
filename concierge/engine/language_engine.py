@@ -1,4 +1,6 @@
 """Language Engine: Parses JSON input and routes to orchestrator."""
+import json
+from concierge.core.workflow import Workflow
 from concierge.core.actions import MethodCallAction, StageTransitionAction
 from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult
 from concierge.engine.orchestrator import Orchestrator
@@ -14,42 +16,63 @@ class LanguageEngine:
     """
     Language engine that receives JSON input and routes to orchestrator.
     Handles parsing, execution, and message formatting.
+    Creates and manages its own orchestrator instance.
     """
     
-    def __init__(self, orchestrator: Orchestrator):
-        self.orchestrator = orchestrator
+    def __init__(self, workflow: Workflow, session_id: str):
+        self.workflow = workflow
+        self.session_id = session_id
+        self.orchestrator = Orchestrator(workflow, session_id)
+    
+    def get_initial_message(self) -> str:
+        """Get initial handshake message for new session"""
+        stage = self.orchestrator.get_current_stage()
+        state = stage.local_state
+        return StageMessage().render(stage, self.workflow, state)
+    
+    def get_error_message(self, error_text: str) -> str:
+        """Format an error message"""
+        return json.dumps({"error": error_text})
+    
+    def get_termination_message(self, session_id: str) -> str:
+        """Format a termination message"""
+        return json.dumps({"status": "terminated", "session_id": session_id})
     
     async def process(self, llm_json: dict) -> str:
         """
         Process LLM JSON input and return formatted message.
+        Handles all exceptions internally.
         
         Expected formats:
         - {"action": "method_call", "tool": "tool_name", "args": {...}}
         - {"action": "stage_transition", "stage": "stage_name"}
         """
-        action_type = llm_json.get("action")
-        
-        if action_type == "method_call":
-            action = MethodCallAction(
-                tool_name=llm_json["tool"],
-                args=llm_json.get("args", {})
-            )
-            result = await self.orchestrator.execute_method_call(action)
-            if isinstance(result, ToolResult):
-                return self._format_tool_result(result)
-            return self._format_error_result(result)
-        
-        elif action_type == "stage_transition":
-            action = StageTransitionAction(
-                target_stage=llm_json["stage"]
-            )
-            result = await self.orchestrator.execute_stage_transition(action)
-            if isinstance(result, TransitionResult):
-                return self._format_transition_result(result)
-            return self._format_error_result(result)
-        
-        else:
-            return self._format_error_result(ErrorResult(message=f"Unknown action type: {action_type}"))
+        try:
+            action_type = llm_json.get("action")
+            
+            if action_type == "method_call":
+                action = MethodCallAction(
+                    tool_name=llm_json["tool"],
+                    args=llm_json.get("args", {})
+                )
+                result = await self.orchestrator.execute_method_call(action)
+                if isinstance(result, ToolResult):
+                    return self._format_tool_result(result)
+                return self._format_error_result(result)
+            
+            elif action_type == "stage_transition":
+                action = StageTransitionAction(
+                    target_stage=llm_json["stage"]
+                )
+                result = await self.orchestrator.execute_stage_transition(action)
+                if isinstance(result, TransitionResult):
+                    return self._format_transition_result(result)
+                return self._format_error_result(result)
+            
+            else:
+                return self._format_error_result(ErrorResult(message=f"Unknown action type: {action_type}"))
+        except Exception as e:
+            return self.get_error_message(str(e))
     
     def _format_tool_result(self, result: ToolResult) -> str:
         """Format tool execution result with current stage context"""

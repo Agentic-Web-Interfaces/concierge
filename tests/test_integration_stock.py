@@ -1,7 +1,6 @@
 """Integration tests for stock workflow with message exchanges."""
 import asyncio
 from concierge.core import State, tool, stage, workflow
-from concierge.engine import Orchestrator
 from concierge.engine.language_engine import LanguageEngine
 
 
@@ -49,8 +48,8 @@ def test_stock_workflow_search():
     """Test searching for a stock"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-1")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-1")
+        orch = engine.orchestrator
         
         response = await engine.process({
             "action": "method_call",
@@ -107,8 +106,8 @@ def test_stock_workflow_add_to_cart():
     """Test adding stock to cart"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-2")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-2")
+        orch = engine.orchestrator
         
         response = await engine.process({
             "action": "method_call",
@@ -169,8 +168,8 @@ def test_stock_workflow_transition():
     """Test transitioning between stages"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-3")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-3")
+        orch = engine.orchestrator
         
         assert orch.get_current_stage().name == "browse"
         
@@ -219,8 +218,8 @@ def test_stock_workflow_full_conversation():
     """Test a full conversation flow"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-4")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-4")
+        orch = engine.orchestrator
         
         response1 = await engine.process({
             "action": "method_call",
@@ -268,8 +267,7 @@ def test_stock_workflow_invalid_action():
     """Test handling of invalid action"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-5")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-5")
         
         response = await engine.process({
             "action": "invalid_action",
@@ -290,8 +288,7 @@ def test_stock_workflow_invalid_tool():
     """Test calling non-existent tool"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-6")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-6")
         
         response = await engine.process({
             "action": "method_call",
@@ -312,8 +309,7 @@ def test_stock_workflow_invalid_transition():
     """Test invalid stage transition"""
     async def run():
         wf = StockWorkflow._workflow
-        orch = Orchestrator(wf, session_id="test-7")
-        engine = LanguageEngine(orch)
+        engine = LanguageEngine(wf, session_id="test-7")
         
         response = await engine.process({
             "action": "stage_transition",

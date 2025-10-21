@@ -64,12 +64,11 @@ def test_server_create_session():
     workflow = StockWorkflow._workflow
     server = Server(workflow)
     
-    session_id = "user-alice"
-    handshake = server.create_session(session_id)
+    session_id = server.create_session()
     
-    assert "stock_exchange" in handshake
-    assert "browse" in handshake
-    assert "Available tools:" in handshake
+    # Should return a UUID string
+    assert isinstance(session_id, str)
+    assert len(session_id) > 0
     assert session_id in server.get_active_sessions()
 
 
@@ -78,8 +77,7 @@ def test_server_handle_tool_request():
     workflow = StockWorkflow._workflow
     server = Server(workflow)
     
-    session_id = "user-test"
-    server.create_session(session_id)
+    session_id = server.create_session()
     
     response = asyncio.run(server.handle_request(session_id, {
         "action": "method_call",
@@ -97,8 +95,7 @@ def test_server_handle_transition():
     workflow = StockWorkflow._workflow
     server = Server(workflow)
     
-    session_id = "user-test"
-    server.create_session(session_id)
+    session_id = server.create_session()
     
     response = asyncio.run(server.handle_request(session_id, {
         "action": "stage_transition",
@@ -114,16 +111,14 @@ def test_server_multiple_sessions():
     workflow = StockWorkflow._workflow
     server = Server(workflow)
     
-    session_1 = "user-alice"
-    session_2 = "user-bob"
-    
-    server.create_session(session_1)
-    server.create_session(session_2)
+    session_1 = server.create_session()
+    session_2 = server.create_session()
     
     active = server.get_active_sessions()
     assert session_1 in active
     assert session_2 in active
     assert len(active) == 2
+    assert session_1 != session_2  # Should be unique
 
 
 def test_server_terminate_session():
@@ -131,11 +126,9 @@ def test_server_terminate_session():
     workflow = StockWorkflow._workflow
     server = Server(workflow)
     
-    session_id = "user-test"
-    server.create_session(session_id)
+    session_id = server.create_session()
     
-    result = server.terminate_session(session_id)
-    assert "terminated" in result
+    server.terminate_session(session_id)
     assert session_id not in server.get_active_sessions()
 
 
@@ -145,11 +138,8 @@ def test_server_session_isolation():
         workflow = StockWorkflow._workflow
         server = Server(workflow)
         
-        session_1 = "user-alice"
-        session_2 = "user-bob"
-        
-        server.create_session(session_1)
-        server.create_session(session_2)
+        session_1 = server.create_session()
+        session_2 = server.create_session()
         
         response_1 = await server.handle_request(session_1, {
             "action": "method_call",
@@ -169,7 +159,41 @@ def test_server_session_isolation():
         assert '"symbol": "GOOGL"' in response_2
         assert '"quantity": 5' in response_2
         
-        assert server.get_active_sessions() == [session_1, session_2]
+        active = server.get_active_sessions()
+        assert session_1 in active
+        assert session_2 in active
+        assert len(active) == 2
     
     asyncio.run(run_test())
+
+
+def test_server_invalid_session_handle_request():
+    """Test that invalid session raises KeyError on handle_request"""
+    async def run_test():
+        workflow = StockWorkflow._workflow
+        server = Server(workflow)
+        
+        try:
+            await server.handle_request("invalid-session-id", {
+                "action": "method_call",
+                "tool": "search",
+                "args": {"symbol": "AAPL"}
+            })
+            assert False, "Should have raised KeyError"
+        except KeyError as e:
+            assert "invalid-session-id" in str(e)
+    
+    asyncio.run(run_test())
+
+
+def test_server_invalid_session_terminate():
+    """Test that invalid session raises KeyError on terminate"""
+    workflow = StockWorkflow._workflow
+    server = Server(workflow)
+    
+    try:
+        server.terminate_session("invalid-session-id")
+        assert False, "Should have raised KeyError"
+    except KeyError as e:
+        assert "invalid-session-id" in str(e)
 
