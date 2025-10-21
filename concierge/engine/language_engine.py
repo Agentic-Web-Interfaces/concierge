@@ -44,13 +44,17 @@ class LanguageEngine:
         Handles all exceptions internally.
         
         Expected formats:
+        - {"action": "handshake"}
         - {"action": "method_call", "tool": "tool_name", "args": {...}}
         - {"action": "stage_transition", "stage": "stage_name"}
         """
         try:
             action_type = llm_json.get("action")
             
-            if action_type == "method_call":
+            if action_type == "handshake":
+                return self.get_initial_message()
+            
+            elif action_type == "method_call":
                 action = MethodCallAction(
                     tool_name=llm_json["tool"],
                     args=llm_json.get("args", {})

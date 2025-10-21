@@ -10,6 +10,8 @@ To call the concierge service, wrap your message in:
 {"__signal__": "call_concierge", "message": <your_concierge_payload>}
 
 The client will strip the signal and forward your message to concierge.
+To initiate a conversation with the concierge, respond with:
+{"__signal__": "initiate_conversation", "prompt": "<N/A>"}
 The concierge will tell you what format it expects.
 
 To request user input, respond with:
@@ -26,6 +28,11 @@ class Client:
         self.llm = OpenAI(base_url=api_base, api_key=api_key)
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.session_id = None
+    
+    def handshake(self) -> str:
+        response = requests.post(CONCIERGE_URL, json={"action": "handshake"})
+        self.session_id = response.headers.get('X-Session-Id')
+        return response.text
 
     def chat(self, user_input: str) -> str:
         self.messages.append({"role": "user", "content": user_input})
@@ -66,17 +73,19 @@ class Client:
             elif signal == "request_input":
                 prompt = data.get("prompt", "Please provide input:")
                 return False, prompt
-            
+
+            elif signal == "initiate_conversation":
+                result = self.handshake()
+                return False, result
+                
             elif signal == "terminate":
                 return True, "Goodbye!"
-                
+            else:
+                return False, f"Unknown signal: {signal}"
         except json.JSONDecodeError:
-            pass
-            
-        return False, reply
+            return False, f"Invalid JSON: {reply}"
 
     def run(self):
-        print("Client started. Type 'exit' to quit.\n")
         
         while True:
             try:
