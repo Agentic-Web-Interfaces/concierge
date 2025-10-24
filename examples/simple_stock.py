@@ -91,29 +91,23 @@ class StockWorkflow:
     transact = TransactStage
     portfolio = PortfolioStage
     
-    # Define stage transitions
     transitions = {
         browse: [transact, portfolio],
         transact: [portfolio, browse],
         portfolio: [browse],
     }
     
-    # Define how state propagates between stages (optional)
     state_management = [
-        (browse, transact, ["symbol", "quantity"]),  # Transfer specific fields
-        (browse, portfolio, StateTransfer.ALL),       # Transfer everything
-        # transact -> portfolio: auto (not listed = default)
+        (browse, transact, ["symbol", "quantity"]), 
+        (browse, portfolio, StateTransfer.ALL),       
     ]
 
 
-# Demo
 async def main():
     print("=== Simple Stock Exchange ===\n")
     
-    # Get the workflow object (auto-built by @workflow decorator!)
     workflow = StockWorkflow._workflow
     
-    # Create orchestrator with session ID
     from concierge.engine import Orchestrator
     session = Orchestrator(workflow, session_id="user-123")
     

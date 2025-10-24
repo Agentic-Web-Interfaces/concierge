@@ -2,7 +2,7 @@
 import json
 from concierge.core.workflow import Workflow
 from concierge.core.actions import MethodCallAction, StageTransitionAction
-from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult, StateInputRequiredResult
+from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult, StateInputRequiredResult, StateUpdateResult
 from concierge.engine.orchestrator import Orchestrator
 from concierge.presentations import ComprehensivePresentation
 from concierge.external.contracts import (
@@ -12,11 +12,11 @@ from concierge.external.contracts import (
     ACTION_TERMINATE_SESSION
 )
 from concierge.communications import (
-    StageMessage,
     ToolResultMessage,
     TransitionResultMessage,
     ErrorMessage,
-    StateInputRequiredMessage
+    StateInputRequiredMessage,
+    StateUpdateMessage
 )
 
 
@@ -34,9 +34,11 @@ class LanguageEngine:
     
     def get_initial_message(self) -> str:
         """Get initial handshake message for new session"""
-        stage = self.orchestrator.get_current_stage()
-        state = stage.local_state
-        return StageMessage().render(stage, self.workflow, state)
+        result = StateUpdateResult(
+            message="Session started successfully.",
+            presentation_type=ComprehensivePresentation
+        )
+        return self._format_state_update(result)
     
     def get_error_message(self, error_text: str) -> str:
         """Format an error message"""
@@ -87,9 +89,11 @@ class LanguageEngine:
             elif action_type == ACTION_STATE_INPUT:
                 state_data = llm_json.get("data", {})
                 self.orchestrator.populate_state(state_data)
-                stage = self.orchestrator.get_current_stage()
-                state = stage.local_state
-                return StageMessage().render(stage, self.workflow, state)
+                result = StateUpdateResult(
+                    message="State populated successfully.",
+                    presentation_type=ComprehensivePresentation
+                )
+                return self._format_state_update(result)
             
             else:
                 return self._format_error_result(ErrorResult(
@@ -120,6 +124,12 @@ class LanguageEngine:
     def _format_state_input_required(self, result: StateInputRequiredResult) -> str:
         """Format state input required message"""
         content = StateInputRequiredMessage().render(result)
+        presentation = result.presentation_type(content)
+        return presentation.render_text(self.orchestrator)
+    
+    def _format_state_update(self, result: StateUpdateResult) -> str:
+        """Format state update message"""
+        content = StateUpdateMessage().render(result)
         presentation = result.presentation_type(content)
         return presentation.render_text(self.orchestrator)
 

@@ -6,6 +6,7 @@ from concierge.communications.transition_result import TransitionResultMessage
 from concierge.communications.tool_result import ToolResultMessage
 from concierge.communications.error import ErrorMessage
 from concierge.communications.state_input_required import StateInputRequiredMessage
+from concierge.communications.state_update import StateUpdateMessage
 
 __all__ = [
     "Communications",
@@ -15,5 +16,6 @@ __all__ = [
     "ToolResultMessage",
     "ErrorMessage",
     "StateInputRequiredMessage",
+    "StateUpdateMessage",
 ]
 

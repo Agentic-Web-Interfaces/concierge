@@ -6,21 +6,23 @@ CONCIERGE_URL = "http://localhost:8081"
 
 SYSTEM_PROMPT = """You are an AI assistant with access to a concierge service.
 
-To call the concierge service, wrap your message in:
-{"__signal__": "call_concierge", "message": <your_concierge_payload>}
+Available signals:
 
-The client will strip the signal and forward your message to concierge.
-To initiate a conversation with the concierge, respond with:
-{"__signal__": "initiate_conversation", "prompt": "<N/A>"}
-The concierge will tell you what format it expects.
+1. To initiate a concierge workflow:
+   {"__signal__": "initiate_conversation", "prompt": "<N/A>"}
 
-To request user input, respond with:
-{"__signal__": "request_input", "prompt": "<your_message for the user>"}
+2. To call the concierge service:
+   {"__signal__": "call_concierge", "message": <your_concierge_payload>}
 
-To end the conversation, respond with:
-{"__signal__": "terminate"}
+3. To request user input:
+   {"__signal__": "request_input", "prompt": "<your_message for the user>"}
 
-You are only allowed to reponse back in JSON with the above format, any message HAS TO CONFIRM TO THE ABOVE STANDARD AND MUST INCLUDE __signal__ key."""
+4. To end the current concierge session (user conversation continues):
+   {"__signal__": "terminate"}
+
+Note: The user will type "exit" when they want to end the entire conversation.
+
+You are only allowed to respond back in JSON with the above format. Any message MUST include the __signal__ key."""
 
 
 class Client:
@@ -61,12 +63,18 @@ class Client:
             envelope = json.loads(llm_message)
             payload = envelope.get("message", {})
             
+            headers = {}
             if self.session_id:
-                payload["session_id"] = self.session_id
+                headers["X-Session-Id"] = self.session_id
             
             print(f"\n[CLIENT → SERVER] {json.dumps(payload)}")
+            if headers:
+                print(f"[HEADERS] {json.dumps(headers)}")
             
-            response = requests.post(CONCIERGE_URL, json=payload)
+            response = requests.post(CONCIERGE_URL, json=payload, headers=headers)
+            
+            if 'X-Session-Id' in response.headers:
+                self.session_id = response.headers['X-Session-Id']
             
             print(f"[SERVER → CLIENT] {response.text}")
             
@@ -93,8 +101,10 @@ class Client:
                 llm_response = self.chat(f"Concierge response: {result}")
                 return self.process_response(llm_response)
                 
-            elif signal == "terminate":
-                return True, "Goodbye!"
+            elif signal == "respond":
+                self.session_id = None
+                message = data.get("message", "Task completed.")
+                return False, message
             else:
                 return False, f"Unknown signal: {signal}"
         except json.JSONDecodeError:

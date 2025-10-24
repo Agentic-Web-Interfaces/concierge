@@ -15,20 +15,21 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """
         POST / - Send message
-        Body: {"session_id": "...", "action": "...", ...}
+        Body: {"action": "...", ...}
+        Session ID via X-Session-Id header (MCP pattern)
         Returns session_id in X-Session-Id header
         """
         length = int(self.headers.get('Content-Length', 0))
         body_bytes = self.rfile.read(length)
         body = json.loads(body_bytes.decode())
         
-        # Log incoming request
         print("\n" + "="*80)
         print("INCOMING REQUEST:")
         print(json.dumps(body, indent=2))
         print("="*80)
         
-        session_id = body.pop('session_id', None)
+        session_id = self.headers.get('X-Session-Id')
+        
         if not session_id:
             session_id = self.server.session_manager.create_session()
             print(f"[NEW] Created session: {session_id}")
@@ -52,7 +53,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
-            self.send_header('X-Session-Id', session_id)  # Return session_id!
+            self.send_header('X-Session-Id', session_id) 
             self.end_headers()
             self.wfile.write(response.encode())
         except Exception as e:

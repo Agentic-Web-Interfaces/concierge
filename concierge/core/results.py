@@ -38,5 +38,12 @@ class StateInputRequiredResult:
     presentation_type: Type[Presentation]
 
 
-Result = ToolResult | TransitionResult | ErrorResult | StateInputRequiredResult
+@dataclass
+class StateUpdateResult:
+    """Result of state update (handshake, state population, etc.)"""
+    message: str
+    presentation_type: Type[Presentation]
+
+
+Result = ToolResult | TransitionResult | ErrorResult | StateInputRequiredResult | StateUpdateResult
 
