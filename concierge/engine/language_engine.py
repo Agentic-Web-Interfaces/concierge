@@ -4,6 +4,7 @@ from concierge.core.workflow import Workflow
 from concierge.core.actions import MethodCallAction, StageTransitionAction
 from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult, StateInputRequiredResult
 from concierge.engine.orchestrator import Orchestrator
+from concierge.presentations import ComprehensivePresentation
 from concierge.communications import (
     StageMessage,
     ToolResultMessage,
@@ -85,31 +86,34 @@ class LanguageEngine:
                 return StageMessage().render(stage, self.workflow, state)
             
             else:
-                return self._format_error_result(ErrorResult(message=f"Unknown action type: {action_type}"))
+                return self._format_error_result(ErrorResult(
+                    message=f"Unknown action type: {action_type}",
+                    presentation_type=ComprehensivePresentation
+                ))
         except Exception as e:
             return self.get_error_message(str(e))
     
     def _format_tool_result(self, result: ToolResult) -> str:
         """Format tool execution result with current stage context"""
-        stage = self.orchestrator.get_current_stage()
-        workflow = self.orchestrator.workflow
-        state = stage.local_state
-
-        return ToolResultMessage().render(result, stage, workflow, state)
+        content = ToolResultMessage().render(result)
+        presentation = result.presentation_type(content)
+        return presentation.render_text(self.orchestrator)
     
     def _format_transition_result(self, result: TransitionResult) -> str:
         """Format transition result with new stage context"""
-        stage = self.orchestrator.get_current_stage()
-        workflow = self.orchestrator.workflow
-        state = stage.local_state
-        
-        return TransitionResultMessage().render(result, stage, workflow, state)
+        content = TransitionResultMessage().render(result)
+        presentation = result.presentation_type(content)
+        return presentation.render_text(self.orchestrator)
     
     def _format_error_result(self, result: ErrorResult) -> str:
         """Format error message"""
-        return ErrorMessage().render(result)
+        content = ErrorMessage().render(result)
+        presentation = result.presentation_type(content)
+        return presentation.render_text(self.orchestrator)
     
     def _format_state_input_required(self, result: StateInputRequiredResult) -> str:
         """Format state input required message"""
-        return StateInputRequiredMessage().render(result)
+        content = StateInputRequiredMessage().render(result)
+        presentation = result.presentation_type(content)
+        return presentation.render_text(self.orchestrator)
 

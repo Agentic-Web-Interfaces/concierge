@@ -57,46 +57,65 @@ def test_stock_workflow_search():
             "args": {"symbol": "AAPL"}
         })
         
-        expected = """Tool 'search' executed successfully.
+        expected = """================================================================================
+RESPONSE:
+Tool 'search' executed successfully.
 
 Result:
-{
-  "result": "Found AAPL: $150.00",
-  "price": 150.0
-}
+{'result': 'Found AAPL: $150.00', 'price': 150.0}
 
-Workflow: stock_test
-Stage: browse (step 1 of 2)
-Description: Browse stocks
+================================================================================
+ADDITIONAL CONTEXT:
 
-Available tools:
-  • search(symbol: string) - Search for stock
-  • add_to_cart(symbol: string, quantity: integer) - Add stock to cart
+WORKFLOW: stock_test
+Description: Test stock workflow
 
-Next stages: portfolio
-Previous stages: 
+STRUCTURE:
+  - browse
+  - portfolio
 
-Current state:
+CURRENT POSITION: browse
+
+CURRENT STATE:
 {
   "last_search": "AAPL"
 }
 
-What would you like to do?
+YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
-1. Call a tool
-Format: {"action": "method_call", "tool": "<tool>", "args": "{...}"}
-Example: {"action":"method_call","tool":"search","args":{"symbol":"AAPL"}}
+1. ACTION CALLS (Tools):
+  Tool: search
+    Description: Search for stock
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "search",
+      "arguments": {
+            "symbol": "<symbol>"
+      }
+}
 
-2. Transition to another stage
-Format: {"action": "stage_transition", "stage": "<stage>"}
-Example: {"action":"stage_transition","stage":"portfolio"}
+  Tool: add_to_cart
+    Description: Add stock to cart
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "add_to_cart",
+      "arguments": {
+            "symbol": "<symbol>",
+            "quantity": 0
+      }
+}
 
-3. End session
-Format: {"action": "terminate_session", "reason": "<reason>"}
-Example: {"action":"terminate_session","reason":"completed"}"""
+
+2. STAGE CALLS (Transitions):
+  Transition to: portfolio
+    {"action": "transition", "target_stage": "portfolio"}
+
+
+================================================================================"""
         
         assert response == expected
-        
         assert orch.get_current_stage().local_state.get("last_search") == "AAPL"
     
     asyncio.run(run())
@@ -115,25 +134,26 @@ def test_stock_workflow_add_to_cart():
             "args": {"symbol": "GOOGL", "quantity": 5}
         })
         
-        expected = """Tool 'add_to_cart' executed successfully.
+        expected = """================================================================================
+RESPONSE:
+Tool 'add_to_cart' executed successfully.
 
 Result:
-{
-  "result": "Added 5 shares of GOOGL"
-}
+{'result': 'Added 5 shares of GOOGL'}
 
-Workflow: stock_test
-Stage: browse (step 1 of 2)
-Description: Browse stocks
+================================================================================
+ADDITIONAL CONTEXT:
 
-Available tools:
-  • search(symbol: string) - Search for stock
-  • add_to_cart(symbol: string, quantity: integer) - Add stock to cart
+WORKFLOW: stock_test
+Description: Test stock workflow
 
-Next stages: portfolio
-Previous stages: 
+STRUCTURE:
+  - browse
+  - portfolio
 
-Current state:
+CURRENT POSITION: browse
+
+CURRENT STATE:
 {
   "cart": {
     "symbol": "GOOGL",
@@ -141,19 +161,39 @@ Current state:
   }
 }
 
-What would you like to do?
+YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
-1. Call a tool
-Format: {"action": "method_call", "tool": "<tool>", "args": "{...}"}
-Example: {"action":"method_call","tool":"search","args":{"symbol":"AAPL"}}
+1. ACTION CALLS (Tools):
+  Tool: search
+    Description: Search for stock
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "search",
+      "arguments": {
+            "symbol": "<symbol>"
+      }
+}
 
-2. Transition to another stage
-Format: {"action": "stage_transition", "stage": "<stage>"}
-Example: {"action":"stage_transition","stage":"portfolio"}
+  Tool: add_to_cart
+    Description: Add stock to cart
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "add_to_cart",
+      "arguments": {
+            "symbol": "<symbol>",
+            "quantity": 0
+      }
+}
 
-3. End session
-Format: {"action": "terminate_session", "reason": "<reason>"}
-Example: {"action":"terminate_session","reason":"completed"}"""
+
+2. STAGE CALLS (Transitions):
+  Transition to: portfolio
+    {"action": "transition", "target_stage": "portfolio"}
+
+
+================================================================================"""
         
         assert response == expected
         
@@ -178,37 +218,46 @@ def test_stock_workflow_transition():
             "stage": "portfolio"
         })
         
-        expected = """Successfully transitioned from 'browse' to 'portfolio'.
+        expected = """================================================================================
+RESPONSE:
+Successfully transitioned from 'browse' to 'portfolio'.
 
-Workflow: stock_test
-Stage: portfolio (step 2 of 2)
-Description: View portfolio
+================================================================================
+ADDITIONAL CONTEXT:
 
-Available tools:
-  • view_holdings() - View current holdings
+WORKFLOW: stock_test
+Description: Test stock workflow
 
-Next stages: browse
-Previous stages: 
+STRUCTURE:
+  - browse
+  - portfolio
 
-Current state:
+CURRENT POSITION: portfolio
+
+CURRENT STATE:
 {}
 
-What would you like to do?
+YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
-1. Call a tool
-Format: {"action": "method_call", "tool": "<tool>", "args": "{...}"}
-Example: {"action":"method_call","tool":"search","args":{"symbol":"AAPL"}}
+1. ACTION CALLS (Tools):
+  Tool: view_holdings
+    Description: View current holdings
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "view_holdings",
+      "arguments": {}
+}
 
-2. Transition to another stage
-Format: {"action": "stage_transition", "stage": "<stage>"}
-Example: {"action":"stage_transition","stage":"portfolio"}
 
-3. End session
-Format: {"action": "terminate_session", "reason": "<reason>"}
-Example: {"action":"terminate_session","reason":"completed"}"""
+2. STAGE CALLS (Transitions):
+  Transition to: browse
+    {"action": "transition", "target_stage": "browse"}
+
+
+================================================================================"""
         
         assert response == expected
-        
         assert orch.get_current_stage().name == "portfolio"
     
     asyncio.run(run())
@@ -274,10 +323,58 @@ def test_stock_workflow_invalid_action():
             "data": "whatever"
         })
         
-        # Assert exact error format
-        expected = """Error: Unknown action type: invalid_action
+        expected = """================================================================================
+RESPONSE:
+Error: Unknown action type: invalid_action
 
-"""
+================================================================================
+ADDITIONAL CONTEXT:
+
+WORKFLOW: stock_test
+Description: Test stock workflow
+
+STRUCTURE:
+  - browse
+  - portfolio
+
+CURRENT POSITION: browse
+
+CURRENT STATE:
+{}
+
+YOU MAY CHOOSE THE FOLLOWING ACTIONS:
+
+1. ACTION CALLS (Tools):
+  Tool: search
+    Description: Search for stock
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "search",
+      "arguments": {
+            "symbol": "<symbol>"
+      }
+}
+
+  Tool: add_to_cart
+    Description: Add stock to cart
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "add_to_cart",
+      "arguments": {
+            "symbol": "<symbol>",
+            "quantity": 0
+      }
+}
+
+
+2. STAGE CALLS (Transitions):
+  Transition to: portfolio
+    {"action": "transition", "target_stage": "portfolio"}
+
+
+================================================================================"""
         
         assert response == expected
     
@@ -296,9 +393,58 @@ def test_stock_workflow_invalid_tool():
             "args": {}
         })
         
-        expected = """Error: Tool 'nonexistent_tool' not found in stage 'browse'
+        expected = """================================================================================
+RESPONSE:
+Error: Tool 'nonexistent_tool' not found in stage 'browse'
 
-"""
+================================================================================
+ADDITIONAL CONTEXT:
+
+WORKFLOW: stock_test
+Description: Test stock workflow
+
+STRUCTURE:
+  - browse
+  - portfolio
+
+CURRENT POSITION: browse
+
+CURRENT STATE:
+{}
+
+YOU MAY CHOOSE THE FOLLOWING ACTIONS:
+
+1. ACTION CALLS (Tools):
+  Tool: search
+    Description: Search for stock
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "search",
+      "arguments": {
+            "symbol": "<symbol>"
+      }
+}
+
+  Tool: add_to_cart
+    Description: Add stock to cart
+    Call Format:
+      {
+      "action": "tool",
+      "tool_name": "add_to_cart",
+      "arguments": {
+            "symbol": "<symbol>",
+            "quantity": 0
+      }
+}
+
+
+2. STAGE CALLS (Transitions):
+  Transition to: portfolio
+    {"action": "transition", "target_stage": "portfolio"}
+
+
+================================================================================"""
         
         assert response == expected
     
