@@ -108,6 +108,54 @@ class task:
     
     def __call__(self, func: Callable) -> Callable:
         """Apply decorator to function"""
+        # Check if this is a classmethod or staticmethod (wrapped)
+        if isinstance(func, classmethod):
+            raise TypeError(
+                f"Invalid task definition: @task decorator cannot be applied to @classmethod.\n"
+                f"Tasks must be regular instance methods.\n"
+                f"Example:\n"
+                f"  @stage()\n"
+                f"  class MyStage:\n"
+                f"      @task()\n"
+                f"      def my_task(self, state, ...):\n"
+                f"          ...\n"
+            )
+        
+        if isinstance(func, staticmethod):
+            raise TypeError(
+                f"Invalid task definition: @task decorator cannot be applied to @staticmethod.\n"
+                f"Tasks must be regular instance methods.\n"
+                f"Example:\n"
+                f"  @stage()\n"
+                f"  class MyStage:\n"
+                f"      @task()\n"
+                f"      def my_task(self, state, ...):\n"
+                f"          ...\n"
+            )
+        
+        # Validate that this is a method (has 'self' parameter)
+        try:
+            sig = inspect.signature(func)
+            params = list(sig.parameters.keys())
+        except (ValueError, TypeError) as e:
+            raise TypeError(
+                f"Invalid task definition: @task could not inspect function signature.\n"
+                f"Original error: {e}\n"
+            )
+        
+        if not params or params[0] != 'self':
+            raise TypeError(
+                f"Invalid task definition: @task decorator can only be applied to instance methods (first parameter must be 'self').\n"
+                f"Function '{func.__name__}' does not have 'self' as first parameter.\n"
+                f"Tasks must be defined as methods within a @stage class.\n"
+                f"Example:\n"
+                f"  @stage()\n"
+                f"  class MyStage:\n"
+                f"      @task()\n"
+                f"      def {func.__name__}(self, state, ...):\n"
+                f"          ...\n"
+            )
+        
         task_obj = Task(
             name=func.__name__,
             description=inspect.getdoc(func) or "",

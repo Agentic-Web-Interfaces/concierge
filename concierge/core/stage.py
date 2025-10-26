@@ -1,7 +1,7 @@
 """
 Stage: Represents a logical grouping of tasks and state.
 """
-from typing import Dict, List, Optional, Callable, Type, Any
+from typing import Dict, List, Optional, Callable, Type, Any, TYPE_CHECKING
 from dataclasses import dataclass, field
 import inspect
 
@@ -9,6 +9,8 @@ from concierge.core.state import State
 from concierge.core.construct import is_construct, validate_construct
 from concierge.core.task import Task, task
 
+if TYPE_CHECKING:
+    from concierge.core.workflow import Workflow
 
 @dataclass
 class Context:
@@ -137,6 +139,23 @@ class stage:
         stage_name = self.name or cls.__name__.lower()
         stage_desc = inspect.getdoc(cls) or ""
         
+        # Validate that this is not already a Stage or Workflow object
+        if isinstance(cls, Stage):
+            raise TypeError(
+                f"Invalid stage definition: Cannot use @stage decorator on a Stage object that has already been decorated.\n"
+                f"The @stage decorator should only be applied once to a class.\n"
+                f"Original stage name: '{cls.name}'\n"
+            )
+        
+        # Import here to avoid circular dependency
+        from concierge.core.workflow import Workflow
+        if isinstance(cls, Workflow):
+            raise TypeError(
+                f"Invalid stage definition: Cannot use @stage decorator on a Workflow object.\n"
+                f"Stages and workflows are separate concepts - define them as separate classes.\n"
+                f"Workflow name: '{cls.name}'\n"
+            )
+        
         stage_obj = Stage(
             name=stage_name,
             description=stage_desc,
@@ -145,12 +164,24 @@ class stage:
         
         instance = cls()
         
-        # Register tasks
+        # Register tasks and validate
+        task_count = 0
         for attr_name, attr_value in cls.__dict__.items():
             task_obj = getattr(attr_value, '_concierge_task', None)
             if task_obj is not None:
                 task_obj.func = getattr(instance, attr_name)
                 stage_obj.add_task(task_obj)
+                task_count += 1
+        
+        # Warn if stage has no tasks (might be a configuration issue)
+        if task_count == 0:
+            import warnings
+            warnings.warn(
+                f"Stage '{stage_name}' (class '{cls.__name__}') has no @task methods defined. "
+                f"Stages should contain at least one @task method to be useful.",
+                UserWarning,
+                stacklevel=2
+            )
         
         stage_obj._original_class = cls
         stage_obj._instance = instance

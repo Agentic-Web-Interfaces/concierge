@@ -7,6 +7,7 @@ import inspect
 
 from concierge.core.stage import Stage
 from concierge.core.state import State
+from concierge.core.task import Task
 
 
 class StateTransfer(Enum):
@@ -209,11 +210,59 @@ class workflow:
         workflow_name = self.name or cls.__name__.lower()
         workflow_desc = self.description or inspect.getdoc(cls) or ""
         
+        if isinstance(cls, Workflow):
+            raise TypeError(
+                f"Invalid workflow definition: Cannot use @workflow decorator on a Workflow object that has already been decorated.\n"
+                f"The @workflow decorator should only be applied once to a class.\n"
+                f"Original workflow name: '{cls.name}'\n"
+            )
+        
+        if isinstance(cls, Stage):
+            raise TypeError(
+                f"Invalid workflow definition: Cannot use @workflow decorator on a Stage object.\n"
+                f"Stages and workflows are separate concepts - define them as separate classes.\n"
+                f"Stage name: '{cls.name}'\n"
+            )
+        
         workflow_obj = Workflow(name=workflow_name, description=workflow_desc)
         
         for attr_name, attr_value in cls.__dict__.items():
+
+            if callable(attr_value) and hasattr(attr_value, '_concierge_task'):
+                raise TypeError(
+                    f"Invalid workflow definition: '{attr_name}' uses @task decorator directly on workflow class '{cls.__name__}'.\n"
+                    f"Tasks must be defined inside @stage classes, not directly in @workflow classes.\n"
+                    f"Example:\n"
+                    f"  @stage()\n"
+                    f"  class MyStage:\n"
+                    f"      @task()\n"
+                    f"      def {attr_name}(self, state, ...):\n"
+                    f"          ...\n"
+                    f"  \n"
+                    f"  @workflow(name='my_workflow')\n"
+                    f"  class MyWorkflow:\n"
+                    f"      my_stage = MyStage  # Reference the stage class\n"
+                )
+            
             if isinstance(attr_value, Stage):
                 workflow_obj.add_stage(attr_value, initial=len(workflow_obj.stages) == 0)
+            elif isinstance(attr_value, type) and attr_name not in ['transitions', 'state_management']:
+                has_task_methods = any(
+                    hasattr(getattr(attr_value, method_name, None), '_concierge_task')
+                    for method_name in dir(attr_value)
+                    if not method_name.startswith('_')
+                )
+                if has_task_methods:
+                    raise TypeError(
+                        f"Invalid workflow definition: '{attr_name}' in workflow '{cls.__name__}' has @task methods but is not decorated with @stage.\n"
+                        f"Classes with @task methods must use the @stage decorator.\n"
+                        f"Example:\n"
+                        f"  @stage(name='{attr_name}')\n"
+                        f"  class {attr_value.__name__}:\n"
+                        f"      @task()\n"
+                        f"      def my_task(self, state, ...):\n"
+                        f"          ...\n"
+                    )
         
         if hasattr(cls, 'transitions'):
             for from_stage, to_stages in cls.transitions.items():
