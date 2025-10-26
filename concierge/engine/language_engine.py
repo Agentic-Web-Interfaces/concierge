@@ -2,7 +2,7 @@
 import json
 from concierge.core.workflow import Workflow
 from concierge.core.actions import MethodCallAction, StageTransitionAction
-from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult, StateInputRequiredResult, StateUpdateResult
+from concierge.core.results import Result, TaskResult, TransitionResult, ErrorResult, StateInputRequiredResult, StateUpdateResult
 from concierge.engine.orchestrator import Orchestrator
 from concierge.presentations import ComprehensivePresentation
 from concierge.external.contracts import (
@@ -12,7 +12,7 @@ from concierge.external.contracts import (
     ACTION_TERMINATE_SESSION
 )
 from concierge.communications import (
-    ToolResultMessage,
+    TaskResultMessage,
     TransitionResultMessage,
     ErrorMessage,
     StateInputRequiredMessage,
@@ -55,7 +55,7 @@ class LanguageEngine:
         
         Expected formats:
         - {"action": "handshake"}
-        - {"action": "method_call", "tool": "tool_name", "args": {...}}
+        - {"action": "method_call", "task": "task_name", "args": {...}}
         - {"action": "stage_transition", "stage": "stage_name"}
         - {"action": "state_input", "data": {"field1": "value1", ...}}
         """
@@ -67,12 +67,12 @@ class LanguageEngine:
             
             elif action_type == ACTION_METHOD_CALL:
                 action = MethodCallAction(
-                    tool_name=llm_json["tool"],
+                    task_name=llm_json["task"],
                     args=llm_json.get("args", {})
                 )
                 result = await self.orchestrator.execute_method_call(action)
-                if isinstance(result, ToolResult):
-                    return self._format_tool_result(result)
+                if isinstance(result, TaskResult):
+                    return self._format_task_result(result)
                 return self._format_error_result(result)
             
             elif action_type == ACTION_STAGE_TRANSITION:
@@ -103,9 +103,9 @@ class LanguageEngine:
         except Exception as e:
             return self.get_error_message(str(e))
     
-    def _format_tool_result(self, result: ToolResult) -> str:
-        """Format tool execution result with current stage context"""
-        content = ToolResultMessage().render(result)
+    def _format_task_result(self, result: TaskResult) -> str:
+        """Format task execution result with current stage context"""
+        content = TaskResultMessage().render(result)
         presentation = result.presentation_type(content)
         return presentation.render_text(self.orchestrator)
     

@@ -3,7 +3,7 @@ from concierge.communications.base import Communications
 from concierge.communications.handshake import HandshakeMessage
 from concierge.communications.stage import StageMessage
 from concierge.communications.transition_result import TransitionResultMessage
-from concierge.communications.tool_result import ToolResultMessage
+from concierge.communications.task_result import TaskResultMessage
 from concierge.communications.error import ErrorMessage
 from concierge.communications.state_input_required import StateInputRequiredMessage
 from concierge.communications.state_update import StateUpdateMessage
@@ -13,7 +13,7 @@ __all__ = [
     "HandshakeMessage",
     "StageMessage",
     "TransitionResultMessage",
-    "ToolResultMessage",
+    "TaskResultMessage",
     "ErrorMessage",
     "StateInputRequiredMessage",
     "StateUpdateMessage",

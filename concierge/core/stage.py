@@ -1,5 +1,5 @@
 """
-Stage: Represents a logical grouping of tools and state.
+Stage: Represents a logical grouping of tasks and state.
 """
 from typing import Dict, List, Optional, Callable, Type, Any
 from dataclasses import dataclass, field
@@ -7,7 +7,7 @@ import inspect
 
 from concierge.core.state import State
 from concierge.core.construct import is_construct, validate_construct
-from concierge.core.tool import Tool, tool
+from concierge.core.task import Task, task
 
 
 @dataclass
@@ -19,18 +19,18 @@ class Context:
 @dataclass
 class Stage:
     """
-    A stage represents a logical grouping of tools and state.
+    A stage represents a logical grouping of tasks and state.
     Analogous to a page in a web application.
     
-    Each stage has its own local state that is shared by all tools within the stage.
+    Each stage has its own local state that is shared by all tasks within the stage.
     """
     name: str
     description: str
         
     # Components
-    tools: Dict[str, Tool] = field(default_factory=dict)
+    tasks: Dict[str, Task] = field(default_factory=dict)
     
-    # Stage-local state (shared by all tools in this stage)
+    # Stage-local state (shared by all tasks in this stage)
     local_state: State = field(default_factory=State)
     
     # Navigation
@@ -56,9 +56,9 @@ class Stage:
             return False
         return self.name == other.name
     
-    def add_tool(self, tool: Tool) -> 'Stage':
-        """Add a tool to this stage"""
-        self.tools[tool.name] = tool
+    def add_task(self, task: Task) -> 'Stage':
+        """Add a task to this stage"""
+        self.tasks[task.name] = task
         return self
     
     def add_substage(self, substage: 'Stage') -> 'Stage':
@@ -67,9 +67,9 @@ class Stage:
         self.substages[substage.name] = substage
         return self
     
-    def get_available_tools(self, state: State) -> List[Tool]:
-        """Get all tools in this stage. All tools are always available."""
-        return list(self.tools.values())
+    def get_available_tasks(self, state: State) -> List[Task]:
+        """Get all tasks in this stage. All tasks are always available."""
+        return list(self.tasks.values())
     
     def can_transition_to(self, target_stage: str) -> bool:
         """Check if transition to target stage is allowed"""
@@ -116,7 +116,7 @@ class Stage:
 # Decorator
 class stage:
     """
-    Mark a class as a Stage. Methods with @tool become tools.
+    Mark a class as a Stage. Methods with @task become tasks.
     
     Args:
         name: Stage name (defaults to class name)
@@ -145,11 +145,12 @@ class stage:
         
         instance = cls()
         
+        # Register tasks
         for attr_name, attr_value in cls.__dict__.items():
-            tool_obj = getattr(attr_value, '_concierge_tool', None)
-            if tool_obj is not None:
-                tool_obj.func = getattr(instance, attr_name)
-                stage_obj.add_tool(tool_obj)
+            task_obj = getattr(attr_value, '_concierge_task', None)
+            if task_obj is not None:
+                task_obj.func = getattr(instance, attr_name)
+                stage_obj.add_task(task_obj)
         
         stage_obj._original_class = cls
         stage_obj._instance = instance

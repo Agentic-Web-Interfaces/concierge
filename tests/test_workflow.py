@@ -1,18 +1,18 @@
 """Test Workflow - stage registration and transitions."""
 import asyncio
-from concierge.core import State, tool, stage, workflow
+from concierge.core import State, task, stage, workflow
 
 
 @stage(name="stage1")
 class Stage1:
-    @tool()
+    @task()
     def action1(self, state: State) -> dict:
         return {"result": "stage1"}
 
 
 @stage(name="stage2")
 class Stage2:
-    @tool()
+    @task()
     def action2(self, state: State) -> dict:
         return {"result": "stage2"}
 
@@ -63,9 +63,9 @@ def test_workflow_validate_transition():
     assert not result["valid"]
 
 
-def test_workflow_call_tool():
+def test_workflow_call_task():
     wf = TestWorkflow._workflow
-    result = asyncio.run(wf.call_tool("stage1", "action1", {}))
-    assert result["type"] == "tool_result"
+    result = asyncio.run(wf.call_task("stage1", "action1", {}))
+    assert result["type"] == "task_result"
     assert result["result"] == {"result": "stage1"}
 

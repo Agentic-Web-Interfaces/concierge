@@ -16,8 +16,8 @@ class StateTransfer(Enum):
 
 class Workflow:
     """
-    Workflow holds the blueprint: stages, tools, transitions.
-    Provides methods for tool execution and transition validation.
+    Workflow holds the blueprint: stages, tasks, transitions.
+    Provides methods for task execution and transition validation.
     
     The Orchestrator maintains the cursor (current_stage) and delegates to Workflow.
     """
@@ -70,12 +70,12 @@ class Workflow:
         return self._incoming_edges.get(self.cursor.name, [])
     
     def get_stage_metadata(self, stage_name: str) -> dict:
-        """Get metadata for a stage: tools and state"""
+        """Get metadata for a stage: tasks and state"""
         stage = self.get_stage(stage_name)
         return {
             "name": stage.name,
             "description": stage.description,
-            "tools": [{"name": t.name, "description": t.description} for t in stage.tools.values()],
+            "tasks": [{"name": t.name, "description": t.description} for t in stage.tasks.values()],
             "state": stage.local_state.data,
             "transitions": stage.transitions,
             "prerequisites": [p.__name__ for p in stage.prerequisites]
@@ -87,29 +87,29 @@ class Workflow:
             raise ValueError(f"Stage '{stage_name}' not found in workflow '{self.name}'")
         return self.stages[stage_name]
     
-    async def call_tool(self, stage_name: str, tool_name: str, args: dict) -> dict:
-        """Execute a tool in a specific stage"""
+    async def call_task(self, stage_name: str, task_name: str, args: dict) -> dict:
+        """Execute a task in a specific stage"""
         stage = self.get_stage(stage_name)
         
-        if tool_name not in stage.tools:
+        if task_name not in stage.tasks:
             return {
                 "type": "error",
-                "message": f"Tool '{tool_name}' not found in stage '{stage.name}'",
-                "available": list(stage.tools.keys())
+                "message": f"Task '{task_name}' not found in stage '{stage.name}'",
+                "available": list(stage.tasks.keys())
             }
         
-        tool = stage.tools[tool_name]
+        task = stage.tasks[task_name]
         try:
-            result = await tool.execute(stage.local_state, **args)
+            result = await task.execute(stage.local_state, **args)
             return {
-                "type": "tool_result",
-                "tool": tool_name,
+                "type": "task_result",
+                "task": task_name,
                 "result": result
             }
         except Exception as e:
             return {
-                "type": "tool_error",
-                "tool": tool_name,
+                "type": "task_error",
+                "task": task_name,
                 "error": str(e)
             }
     

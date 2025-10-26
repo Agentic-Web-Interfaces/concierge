@@ -77,7 +77,7 @@ class HTTPServer:
     HTTP Server - Transport adapter that exposes SessionManager over HTTP.
     
     This is just plumbing - it knows about HTTP but not about workflows,
-    stages, tools, etc. All business logic is in SessionManager.
+    stages, tasks, etc. All business logic is in SessionManager.
     """
     
     def __init__(self, session_manager: SessionManager, host: str = "0.0.0.0", port: int = 8080):

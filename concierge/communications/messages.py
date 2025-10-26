@@ -4,10 +4,10 @@ Format and examples extracted from external/contracts.py
 """
 import json
 from concierge.external.contracts import (
-    ToolCall,
+    TaskCall,
     StageTransition,
     TerminateSession,
-    TOOL_CALL_EXAMPLE,
+    TASK_CALL_EXAMPLE,
     STAGE_TRANSITION_EXAMPLE,
     TERMINATE_SESSION_EXAMPLE
 )
@@ -34,8 +34,8 @@ def _format_schema_simple(model_cls) -> str:
 
 
 # Generate format (schema) and example for each contract
-TOOL_CALL_FORMAT = _format_schema_simple(ToolCall)
-TOOL_CALL_EXAMPLE_JSON = TOOL_CALL_EXAMPLE.model_dump_json()
+TASK_CALL_FORMAT = _format_schema_simple(TaskCall)
+TASK_CALL_EXAMPLE_JSON = TASK_CALL_EXAMPLE.model_dump_json()
 
 STAGE_TRANSITION_FORMAT = _format_schema_simple(StageTransition)
 STAGE_TRANSITION_EXAMPLE_JSON = STAGE_TRANSITION_EXAMPLE.model_dump_json()
@@ -64,8 +64,8 @@ Workflow purpose: {workflow_description}
 You are currently on the '{current_stage}' stage (step {stage_index} of {total_stages}).
 Stage description: {stage_description}
 
-Available tools in this stage:
-{available_tools}
+Available tasks in this stage:
+{available_tasks}
 
 Available stage transitions:
   -> Next stages: {next_stages}
@@ -78,9 +78,9 @@ Current state:
 
 What would you like to do?
 
-1. Call a tool
-   Format: {tool_call_format}
-   Example: {tool_call_example}
+1. Call a task
+   Format: {task_call_format}
+   Example: {task_call_example}
 
 2. Transition to another stage
    Format: {stage_transition_format}

@@ -5,8 +5,8 @@ from typing import Any
 
 @dataclass
 class MethodCallAction:
-    """Action to call a tool in current stage"""
-    tool_name: str
+    """Action to call a task in current stage"""
+    task_name: str
     args: dict[str, Any]
 
 

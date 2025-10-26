@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 class Presentation(ABC):
     """
     Base class for presentations - handles formatting of response content
-    with orchestrator context (stage, tools, state, etc.)
+    with orchestrator context (stage, tasks, state, etc.)
     """
     
     def __init__(self, content: str):

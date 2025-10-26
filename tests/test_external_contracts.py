@@ -1,23 +1,23 @@
 """Test external contracts - formal JSON schemas."""
 from concierge.external.contracts import (
-    ToolCall,
+    TaskCall,
     StageTransition,
     TerminateSession,
-    TOOL_CALL_EXAMPLE,
+    TASK_CALL_EXAMPLE,
     STAGE_TRANSITION_EXAMPLE,
     TERMINATE_SESSION_EXAMPLE,
     _auto_example
 )
 
 
-def test_tool_call_schema():
-    """Test ToolCall schema definition"""
-    schema = ToolCall.model_json_schema()
+def test_task_call_schema():
+    """Test TaskCall schema definition"""
+    schema = TaskCall.model_json_schema()
     
     assert schema["properties"]["action"]["const"] == "method_call"
     
-    assert "examples" in schema["properties"]["tool"]
-    assert "search" in schema["properties"]["tool"]["examples"]
+    assert "examples" in schema["properties"]["task"]
+    assert "search" in schema["properties"]["task"]["examples"]
     
     assert "examples" in schema["properties"]["args"]
 
@@ -42,11 +42,11 @@ def test_terminate_session_schema():
     assert "completed" in schema["properties"]["reason"]["examples"]
 
 
-def test_auto_example_tool_call():
-    """Test auto-generation of ToolCall example"""
-    assert TOOL_CALL_EXAMPLE.action == "method_call"
-    assert TOOL_CALL_EXAMPLE.tool == "search"
-    assert TOOL_CALL_EXAMPLE.args == {"symbol": "AAPL"}
+def test_auto_example_task_call():
+    """Test auto-generation of TaskCall example"""
+    assert TASK_CALL_EXAMPLE.action == "method_call"
+    assert TASK_CALL_EXAMPLE.task == "search"
+    assert TASK_CALL_EXAMPLE.args == {"symbol": "AAPL"}
 
 
 def test_auto_example_stage_transition():
@@ -63,10 +63,10 @@ def test_auto_example_terminate_session():
 
 def test_example_serialization():
     """Test that examples serialize to valid JSON"""
-    tool_json = TOOL_CALL_EXAMPLE.model_dump()
-    assert tool_json["action"] == "method_call"
-    assert tool_json["tool"] == "search"
-    assert tool_json["args"] == {"symbol": "AAPL"}
+    task_json = TASK_CALL_EXAMPLE.model_dump()
+    assert task_json["action"] == "method_call"
+    assert task_json["task"] == "search"
+    assert task_json["args"] == {"symbol": "AAPL"}
     
     stage_json = STAGE_TRANSITION_EXAMPLE.model_dump()
     assert stage_json["action"] == "stage_transition"
@@ -81,23 +81,23 @@ def test_example_json_strings():
     """Test JSON string formatting"""
     import json
     
-    tool_str = TOOL_CALL_EXAMPLE.model_dump_json()
+    task_str = TASK_CALL_EXAMPLE.model_dump_json()
     stage_str = STAGE_TRANSITION_EXAMPLE.model_dump_json()
     term_str = TERMINATE_SESSION_EXAMPLE.model_dump_json()
     
-    assert json.loads(tool_str)["action"] == "method_call"
+    assert json.loads(task_str)["action"] == "method_call"
     assert json.loads(stage_str)["action"] == "stage_transition"
     assert json.loads(term_str)["action"] == "terminate_session"
 
 
 def test_contract_validation():
     """Test that contracts validate correctly"""
-    valid_tool = ToolCall(
+    valid_task = TaskCall(
         action="method_call",
-        tool="search",
+        task="search",
         args={"symbol": "AAPL"}
     )
-    assert valid_tool.action == "method_call"
+    assert valid_task.action == "method_call"
     
     valid_stage = StageTransition(
         action="stage_transition",

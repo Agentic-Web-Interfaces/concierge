@@ -32,10 +32,10 @@ state = state.update("user", {"id": "123", "email": "user@example.com"})
 state = state.update("cart", {"items": ["laptop"], "total": 999.99})
 ```
 
-### 🔧 **Tools**
+### 🔧 **Tasks**
 Actions that read and write state with automatic validation:
 ```python
-@Tool("Search for products")
+@task("Search for products")
 def search(state: State, query: str) -> tuple:
     results = db.search(query)
     return results, {
@@ -47,12 +47,12 @@ def search(state: State, query: str) -> tuple:
 ```
 
 ### 📄 **Stages**
-Logical groupings of tools and state (like pages in a web app):
+Logical groupings of tasks and state (like pages in a web app):
 ```python
 browse_stage = Stage(
     name="browse",
     description="Browse products", 
-    tools=[search_tool, add_to_cart_tool],
+    tasks=[search_task, add_to_cart_task],
     transitions=["cart", "checkout"]
 )
 ```
@@ -80,7 +80,7 @@ workflow.add_stage(checkout_stage)
 
 ```python
 from concierge.core import (
-    Workflow, Stage, Tool, 
+    Workflow, Stage, Task, 
     String, Integer, List,
     Construct, State
 )
@@ -91,7 +91,7 @@ cart = Construct("cart", {
     "total": Float("total", min_value=0)
 })
 
-# 2. Define tools (business logic)
+# 2. Define tasks (business logic)
 def add_to_cart(state: State, item_id: str) -> tuple:
     items = state.get("cart", "items", [])
     items.append(item_id)
@@ -99,11 +99,11 @@ def add_to_cart(state: State, item_id: str) -> tuple:
         "state_updates": {"cart.items": items}
     }
 
-add_tool = Tool("add_to_cart", "Add item", add_to_cart)
+add_task = Task("add_to_cart", "Add item", add_to_cart)
 
 # 3. Create stages
 browse = Stage("browse", "Browse products")
-browse.add_tool(add_tool)
+browse.add_task(add_task)
 browse.transitions = ["checkout"]
 
 # 4. Build workflow
@@ -113,8 +113,8 @@ workflow.add_stage(browse)
 # 5. Run session
 session = workflow.create_session()
 result = await session.process_action({
-    "action": "tool",
-    "tool": "add_to_cart", 
+    "action": "method_call",
+    "task": "add_to_cart", 
     "args": {"item_id": "laptop"}
 })
 ```
@@ -130,7 +130,7 @@ Smart Server
     ├── Workflow Engine
     ├── State Manager  
     ├── Prompt Generator
-    └── Tool Executor
+    └── Task Executor
     ↓
 LLM (via client)
     ↓
@@ -158,7 +158,7 @@ Client displays to user
 This is a **minimal proof-of-concept** showing the core ideas. Key features demonstrated:
 - ✅ Primitive → Construct → State hierarchy
 - ✅ Immutable state management  
-- ✅ Tool execution with state updates
+- ✅ Task execution with state updates
 - ✅ Stage-based organization
 - ✅ Auto-prompt generation
 - ✅ Session management
@@ -175,7 +175,7 @@ This is a **minimal proof-of-concept** showing the core ideas. Key features demo
 ## Inspiration
 
 Built after analyzing:
-- **MCP** (Model Context Protocol) - Tool definitions
+- **MCP** (Model Context Protocol) - Task definitions
 - **Burr** - Immutable state patterns
 - **5ire** - Client implementation patterns
 - **LangGraph** - DAG workflows

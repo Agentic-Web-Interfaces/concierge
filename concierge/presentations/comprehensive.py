@@ -1,8 +1,8 @@
-"""Comprehensive Presentation - full context with stage, tools, state, etc."""
+"""Comprehensive Presentation - full context with stage, tasks, state, etc."""
 import json
 from concierge.presentations.base import Presentation
 from concierge.external.contracts import (
-    ToolCall, 
+    TaskCall, 
     StageTransition,
     ACTION_METHOD_CALL,
     ACTION_STAGE_TRANSITION
@@ -41,8 +41,8 @@ class ComprehensivePresentation(Presentation):
             "",
             "YOU MAY CHOOSE THE FOLLOWING ACTIONS:",
             "",
-            "1. ACTION CALLS (Tools):",
-            self._format_tools(current_stage),
+            "1. ACTION CALLS (Tasks):",
+            self._format_tasks(current_stage),
             "",
             "2. STAGE CALLS (Transitions):",
             self._format_transitions(current_stage),
@@ -67,27 +67,27 @@ class ComprehensivePresentation(Presentation):
             return json.dumps(state_data, indent=2)
         return "{}"
     
-    def _format_tools(self, stage) -> str:
-        """Format available tools with descriptions and call format"""
-        if not stage.tools:
-            return "  No tools available"
+    def _format_tasks(self, stage) -> str:
+        """Format available tasks with descriptions and call format"""
+        if not stage.tasks:
+            return "  No tasks available"
         
-        tool_lines = []
-        for tool_name, tool in stage.tools.items():
-            tool_schema = tool.to_schema()
-            tool_lines.append(f"  Tool: {tool_name}")
-            tool_lines.append(f"    Description: {tool.description}")
-            tool_lines.append(f"    Call Format:")
+        task_lines = []
+        for task_name, task in stage.tasks.items():
+            task_schema = task.to_schema()
+            task_lines.append(f"  Task: {task_name}")
+            task_lines.append(f"    Description: {task.description}")
+            task_lines.append(f"    Call Format:")
             
-            example_call = ToolCall(
+            example_call = TaskCall(
                 action=ACTION_METHOD_CALL,
-                tool=tool_name,
-                args=self._generate_example_args(tool_schema["input_schema"])
+                task=task_name,
+                args=self._generate_example_args(task_schema["input_schema"])
             )
-            tool_lines.append(f"      {json.dumps(example_call.model_dump(), indent=6)}")
-            tool_lines.append("")
+            task_lines.append(f"      {json.dumps(example_call.model_dump(), indent=6)}")
+            task_lines.append("")
         
-        return "\n".join(tool_lines)
+        return "\n".join(task_lines)
     
     def _format_transitions(self, stage) -> str:
         """Format available transitions with exact JSON format"""

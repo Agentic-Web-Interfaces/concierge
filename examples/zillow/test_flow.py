@@ -11,7 +11,7 @@ async def test_workflow_execution():
     
     result = await engine.process({
         "action": "method_call",
-        "tool": "search_listings",
+        "task": "search_listings",
         "args": {"location": "Phoenix, AZ", "max_price": 450000, "filters": {}}
     })
     assert "Phoenix, AZ" in result
@@ -20,7 +20,7 @@ async def test_workflow_execution():
     await engine.process({"action": "stage_transition", "stage": "analytics"})
     result = await engine.process({
         "action": "method_call",
-        "tool": "run_monte_carlo",
+        "task": "run_monte_carlo",
         "args": {"property_id": "prop-001", "simulations": 1000}
     })
     assert "Monte Carlo" in result
@@ -29,7 +29,7 @@ async def test_workflow_execution():
     await engine.process({"action": "stage_transition", "stage": "inspection"})
     result = await engine.process({
         "action": "method_call",
-        "tool": "schedule_inspectors",
+        "task": "schedule_inspectors",
         "args": {"property_id": "prop-001", "inspection_types": ["general", "structural"]}
     })
     assert "Scheduled" in result
@@ -37,7 +37,7 @@ async def test_workflow_execution():
     await engine.process({"action": "stage_transition", "stage": "negotiation"})
     result = await engine.process({
         "action": "method_call",
-        "tool": "submit_offer",
+        "task": "submit_offer",
         "args": {"property_id": "prop-001", "offer_price": 395000, "contingencies": ["inspection"]}
     })
     assert "Offer submitted" in result
@@ -46,8 +46,8 @@ async def test_workflow_execution():
     print("All tests passed")
     
 
-async def test_portfolio_tools():
-    """Test portfolio stage tools"""
+async def test_portfolio_tasks():
+    """Test portfolio stage tasks"""
     workflow = ZillowWorkflow._workflow
     engine = LanguageEngine(workflow, session_id="test-002")
     
@@ -55,14 +55,14 @@ async def test_portfolio_tools():
     
     result = await engine.process({
         "action": "method_call",
-        "tool": "detect_refi_opportunities",
+        "task": "detect_refi_opportunities",
         "args": {}
     })
     assert "Refi opportunity" in result
     
     result = await engine.process({
         "action": "method_call",
-        "tool": "simulate_rebalance",
+        "task": "simulate_rebalance",
         "args": {"constraints": {"max_sell": 1, "min_roi": 15}}
     })
     assert "Rebalance" in result
@@ -73,4 +73,4 @@ async def test_portfolio_tools():
 
 if __name__ == "__main__":
     asyncio.run(test_workflow_execution())
-    asyncio.run(test_portfolio_tools())
+    asyncio.run(test_portfolio_tasks())

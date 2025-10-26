@@ -1,6 +1,6 @@
 """Integration tests for stock workflow with message exchanges."""
 import asyncio
-from concierge.core import State, tool, stage, workflow
+from concierge.core import State, task, stage, workflow
 from concierge.engine.language_engine import LanguageEngine
 from concierge.external.contracts import ACTION_METHOD_CALL, ACTION_STAGE_TRANSITION
 
@@ -10,13 +10,13 @@ from concierge.external.contracts import ACTION_METHOD_CALL, ACTION_STAGE_TRANSI
 class Browse:
     """Browse stocks"""
     
-    @tool()
+    @task()
     def search(self, state: State, symbol: str):
         """Search for stock"""
         state.set("last_search", symbol)
         return {"result": f"Found {symbol}: $150.00", "price": 150.0}
     
-    @tool()
+    @task()
     def add_to_cart(self, state: State, symbol: str, quantity: int):
         """Add stock to cart"""
         state.set("cart", {"symbol": symbol, "quantity": quantity})
@@ -27,7 +27,7 @@ class Browse:
 class Portfolio:
     """View portfolio"""
     
-    @tool()
+    @task()
     def view_holdings(self, state: State):
         """View current holdings"""
         return {"result": "Holdings: AAPL: 10 shares"}
@@ -54,13 +54,13 @@ def test_stock_workflow_search():
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "search",
+            "task": "search",
             "args": {"symbol": "AAPL"}
         })
         
         expected = """================================================================================
 RESPONSE:
-Tool 'search' executed successfully.
+Task 'search' executed successfully.
 
 Result:
 {'result': 'Found AAPL: $150.00', 'price': 150.0}
@@ -85,23 +85,23 @@ CURRENT STATE:
 YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
 1. ACTION CALLS (Tools):
-  Tool: search
+  Task: search
     Description: Search for stock
     Call Format:
       {
       "action": "method_call",
-      "tool": "search",
+      "task": "search",
       "args": {
             "symbol": "<symbol>"
       }
 }
 
-  Tool: add_to_cart
+  Task: add_to_cart
     Description: Add stock to cart
     Call Format:
       {
       "action": "method_call",
-      "tool": "add_to_cart",
+      "task": "add_to_cart",
       "args": {
             "symbol": "<symbol>",
             "quantity": 0
@@ -131,13 +131,13 @@ def test_stock_workflow_add_to_cart():
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "add_to_cart",
+            "task": "add_to_cart",
             "args": {"symbol": "GOOGL", "quantity": 5}
         })
         
         expected = """================================================================================
 RESPONSE:
-Tool 'add_to_cart' executed successfully.
+Task 'add_to_cart' executed successfully.
 
 Result:
 {'result': 'Added 5 shares of GOOGL'}
@@ -165,23 +165,23 @@ CURRENT STATE:
 YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
 1. ACTION CALLS (Tools):
-  Tool: search
+  Task: search
     Description: Search for stock
     Call Format:
       {
       "action": "method_call",
-      "tool": "search",
+      "task": "search",
       "args": {
             "symbol": "<symbol>"
       }
 }
 
-  Tool: add_to_cart
+  Task: add_to_cart
     Description: Add stock to cart
     Call Format:
       {
       "action": "method_call",
-      "tool": "add_to_cart",
+      "task": "add_to_cart",
       "args": {
             "symbol": "<symbol>",
             "quantity": 0
@@ -241,12 +241,12 @@ CURRENT STATE:
 YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
 1. ACTION CALLS (Tools):
-  Tool: view_holdings
+  Task: view_holdings
     Description: View current holdings
     Call Format:
       {
       "action": "method_call",
-      "tool": "view_holdings",
+      "task": "view_holdings",
       "args": {}
 }
 
@@ -273,19 +273,19 @@ def test_stock_workflow_full_conversation():
         
         response1 = await engine.process({
             "action": "method_call",
-            "tool": "search",
+            "task": "search",
             "args": {"symbol": "AAPL"}
         })
-        assert "Tool 'search' executed successfully." in response1
+        assert "Task 'search' executed successfully." in response1
         assert "Found AAPL: $150.00" in response1
         assert orch.get_current_stage().name == "browse"
         
         response2 = await engine.process({
             "action": "method_call",
-            "tool": "add_to_cart",
+            "task": "add_to_cart",
             "args": {"symbol": "AAPL", "quantity": 10}
         })
-        assert "Tool 'add_to_cart' executed successfully." in response2
+        assert "Task 'add_to_cart' executed successfully." in response2
         assert "Added 10 shares of AAPL" in response2
         assert orch.get_current_stage().local_state.get("cart") is not None
         
@@ -298,10 +298,10 @@ def test_stock_workflow_full_conversation():
         
         response4 = await engine.process({
             "action": "method_call",
-            "tool": "view_holdings",
+            "task": "view_holdings",
             "args": {}
         })
-        assert "Tool 'view_holdings' executed successfully." in response4
+        assert "Task 'view_holdings' executed successfully." in response4
         assert "Holdings: AAPL: 10 shares" in response4
         
         assert len(orch.history) == 4
@@ -346,23 +346,23 @@ CURRENT STATE:
 YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
 1. ACTION CALLS (Tools):
-  Tool: search
+  Task: search
     Description: Search for stock
     Call Format:
       {
       "action": "method_call",
-      "tool": "search",
+      "task": "search",
       "args": {
             "symbol": "<symbol>"
       }
 }
 
-  Tool: add_to_cart
+  Task: add_to_cart
     Description: Add stock to cart
     Call Format:
       {
       "action": "method_call",
-      "tool": "add_to_cart",
+      "task": "add_to_cart",
       "args": {
             "symbol": "<symbol>",
             "quantity": 0
@@ -382,21 +382,21 @@ YOU MAY CHOOSE THE FOLLOWING ACTIONS:
     asyncio.run(run())
 
 
-def test_stock_workflow_invalid_tool():
-    """Test calling non-existent tool"""
+def test_stock_workflow_invalid_task():
+    """Test calling non-existent task"""
     async def run():
         wf = StockWorkflow._workflow
         engine = LanguageEngine(wf, session_id="test-6")
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "nonexistent_tool",
+            "task": "nonexistent_task",
             "args": {}
         })
         
         expected = """================================================================================
 RESPONSE:
-Error: Tool 'nonexistent_tool' not found in stage 'browse'
+Error: Task 'nonexistent_task' not found in stage 'browse'
 
 ================================================================================
 ADDITIONAL CONTEXT:
@@ -416,23 +416,23 @@ CURRENT STATE:
 YOU MAY CHOOSE THE FOLLOWING ACTIONS:
 
 1. ACTION CALLS (Tools):
-  Tool: search
+  Task: search
     Description: Search for stock
     Call Format:
       {
       "action": "method_call",
-      "tool": "search",
+      "task": "search",
       "args": {
             "symbol": "<symbol>"
       }
 }
 
-  Tool: add_to_cart
+  Task: add_to_cart
     Description: Add stock to cart
     Call Format:
       {
       "action": "method_call",
-      "tool": "add_to_cart",
+      "task": "add_to_cart",
       "args": {
             "symbol": "<symbol>",
             "quantity": 0

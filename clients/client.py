@@ -22,7 +22,7 @@ Example:
     "service": "stock_exchange",
     "payload": {
         "action": "method_call",
-        "tool": "search",
+        "task": "search",
         "args": {"symbol": "AAPL"}
     }
 }

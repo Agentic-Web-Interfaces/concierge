@@ -5,7 +5,7 @@ Focus is on showing the framework, not real stock logic.
 """
 import asyncio
 from pydantic import BaseModel, Field
-from concierge.core import construct, State, tool, stage, workflow, StateTransfer
+from concierge.core import construct, State, task, stage, workflow, StateTransfer
 
 
 # Define constructs
@@ -28,19 +28,19 @@ class Transaction(BaseModel):
 class BrowseStage:
     """Browse and search stocks"""
     
-    @tool()
+    @task()
     def search(self, state: State, symbol: str) -> dict:
         """Search for a stock"""
         return {"result": f"Found {symbol}: $150.00", "symbol": symbol, "price": 150.00}
     
-    @tool()
+    @task()
     def add_to_cart(self, state: State, symbol: str, quantity: int) -> dict:
         """Add stock to cart (updates state directly)"""
         state.set("symbol", symbol)
         state.set("quantity", quantity)
         return {"result": f"Added {quantity} shares of {symbol}"}
     
-    @tool()
+    @task()
     def view_history(self, state: State, symbol: str) -> dict:
         """View stock price history"""
         return {"result": f"{symbol} history: [100, 120, 150]"}
@@ -51,14 +51,14 @@ class BrowseStage:
 class TransactStage:
     """Buy or sell stocks"""
     
-    @tool(output=Transaction)
+    @task(output=Transaction)
     def buy(self, state: State) -> dict:
         """Buy the selected stock"""
         stock = state.get("symbol")
         qty = state.get("quantity")
         return {"order_id": "ORD123", "status": f"Bought {qty} shares of {stock}"}
     
-    @tool(output=Transaction)
+    @task(output=Transaction)
     def sell(self, state: State) -> dict:
         """Sell the selected stock"""
         stock = state.get("symbol")
@@ -71,12 +71,12 @@ class TransactStage:
 class PortfolioStage:
     """View portfolio and profits"""
     
-    @tool()
+    @task()
     def view_holdings(self, state: State) -> dict:
         """View current holdings"""
         return {"result": "Holdings: AAPL: 10 shares, GOOGL: 5 shares"}
     
-    @tool()
+    @task()
     def view_profit(self, state: State) -> dict:
         """View profit/loss"""
         return {"result": "Total profit: +$1,234.56"}
@@ -117,8 +117,8 @@ async def main():
     # 1. Search for stock
     print("1. Searching for stock...")
     result = await session.process_action({
-        "action": "tool",
-        "tool": "search",
+        "action": "method_call",
+        "task": "search",
         "args": {"symbol": "AAPL"}
     })
     print(f"   {result}\n")
@@ -126,17 +126,17 @@ async def main():
     # 2. Add stock to cart (updates Browse stage's local state)
     print("2. Adding stock to cart...")
     result = await session.process_action({
-        "action": "tool",
-        "tool": "add_to_cart",
+        "action": "method_call",
+        "task": "add_to_cart",
         "args": {"symbol": "AAPL", "quantity": 10}
     })
     print(f"   {result}\n")
     
-    # 3. Check that other tools in Browse stage can see the state
+    # 3. Check that other tasks in Browse stage can see the state
     print("3. Viewing history (should see state from add_to_cart)...")
     result = await session.process_action({
-        "action": "tool",
-        "tool": "view_history",
+        "action": "method_call",
+        "task": "view_history",
         "args": {"symbol": "AAPL"}
     })
     print(f"   {result}\n")
@@ -153,8 +153,8 @@ async def main():
     # 5. View holdings in portfolio stage
     print("5. Viewing holdings in portfolio stage...")
     result = await session.process_action({
-        "action": "tool",
-        "tool": "view_holdings",
+        "action": "method_call",
+        "task": "view_holdings",
         "args": {}
     })
     print(f"   {result}\n")

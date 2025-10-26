@@ -9,18 +9,18 @@ import re
 import asyncio
 from pydantic import ValidationError
 
-from concierge.core import State, tool, stage, workflow
+from concierge.core import State, task, stage, workflow
 from concierge.engine.language_engine import LanguageEngine
-from concierge.external.contracts import ToolCall, StageTransition
+from concierge.external.contracts import TaskCall, StageTransition
 
 
 @stage(name="test_stage")
 class TestStage:
     """Test stage"""
     
-    @tool()
-    def test_tool(self, state: State, arg1: str, arg2: int):
-        """Test tool with args"""
+    @task()
+    def test_task(self, state: State, arg1: str, arg2: int):
+        """Test task with args"""
         return {"result": "success"}
 
 
@@ -34,7 +34,7 @@ class TestWorkflow:
 def extract_json_examples(presentation_output: str) -> dict[str, list[dict]]:
     """Extract all JSON examples from presentation output"""
     examples = {
-        "tool_calls": [],
+        "task_calls": [],
         "transitions": []
     }
     
@@ -74,7 +74,7 @@ def extract_json_examples(presentation_output: str) -> dict[str, list[dict]]:
                     
                     action = parsed.get("action")
                     if action == "method_call":
-                        examples["tool_calls"].append(parsed)
+                        examples["task_calls"].append(parsed)
                     elif action == "stage_transition":
                         examples["transitions"].append(parsed)
                 except json.JSONDecodeError:
@@ -85,9 +85,9 @@ def extract_json_examples(presentation_output: str) -> dict[str, list[dict]]:
     return examples
 
 
-def test_presentation_tool_call_examples_match_contract():
+def test_presentation_task_call_examples_match_contract():
     """
-    CRITICAL: Ensures tool call examples in presentation match ToolCall contract.
+    CRITICAL: Ensures task call examples in presentation match TaskCall contract.
     
     This catches bugs where presentation shows wrong JSON format.
     """
@@ -97,30 +97,30 @@ def test_presentation_tool_call_examples_match_contract():
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "test_tool",
+            "task": "test_task",
             "args": {"arg1": "test", "arg2": 42}
         })
         
         examples = extract_json_examples(response)
         
-        assert len(examples["tool_calls"]) > 0, "No tool call examples found in presentation!"
+        assert len(examples["task_calls"]) > 0, "No task call examples found in presentation!"
         
-        for i, example in enumerate(examples["tool_calls"]):
+        for i, example in enumerate(examples["task_calls"]):
             try:
-                validated = ToolCall(**example)
+                validated = TaskCall(**example)
                 
                 assert hasattr(validated, 'action'), f"Example {i}: Missing 'action' field"
-                assert hasattr(validated, 'tool'), f"Example {i}: Missing 'tool' field"
+                assert hasattr(validated, 'task'), f"Example {i}: Missing 'task' field"
                 assert hasattr(validated, 'args'), f"Example {i}: Missing 'args' field"
                 
                 example_keys = set(example.keys())
-                contract_keys = set(ToolCall.model_fields.keys())
+                contract_keys = set(TaskCall.model_fields.keys())
                 extra_keys = example_keys - contract_keys
                 assert not extra_keys, f"Example {i}: Unexpected fields {extra_keys} not in contract"
                 
             except ValidationError as e:
                 raise AssertionError(
-                    f"Tool call example {i} in presentation does NOT match ToolCall contract!\n"
+                    f"Task call example {i} in presentation does NOT match TaskCall contract!\n"
                     f"Example: {json.dumps(example, indent=2)}\n"
                     f"Validation error: {e}"
                 )
@@ -140,7 +140,7 @@ def test_presentation_transition_examples_match_contract():
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "test_tool",
+            "task": "test_task",
             "args": {"arg1": "test", "arg2": 42}
         })
         
@@ -182,23 +182,23 @@ def test_language_engine_accepts_presentation_examples():
         
         response = await engine.process({
             "action": "method_call",
-            "tool": "test_tool",
+            "task": "test_task",
             "args": {"arg1": "test", "arg2": 42}
         })
         
         examples = extract_json_examples(response)
         
-        for i, tool_example in enumerate(examples["tool_calls"]):
+        for i, task_example in enumerate(examples["task_calls"]):
             try:
-                result = await engine.process(tool_example)
+                result = await engine.process(task_example)
                 
                 assert "Unknown action type" not in result, \
-                    f"Tool call example {i} was rejected by language engine!"
+                    f"Task call example {i} was rejected by language engine!"
                 
             except Exception as e:
                 raise AssertionError(
-                    f"Language engine failed to parse tool call example {i} from presentation!\n"
-                    f"Example: {json.dumps(tool_example, indent=2)}\n"
+                    f"Language engine failed to parse task call example {i} from presentation!\n"
+                    f"Example: {json.dumps(task_example, indent=2)}\n"
                     f"Error: {e}"
                 )
     
@@ -216,14 +216,14 @@ def test_contract_constants_match_literal_types():
         ACTION_STAGE_TRANSITION,
         ACTION_STATE_INPUT,
         ACTION_TERMINATE_SESSION,
-        ToolCall,
+        TaskCall,
         StageTransition,
         StateInput,
         TerminateSession
     )
     
-    assert ACTION_METHOD_CALL == ToolCall.model_fields["action"].annotation.__args__[0], \
-        "ACTION_METHOD_CALL constant doesn't match ToolCall Literal type!"
+    assert ACTION_METHOD_CALL == TaskCall.model_fields["action"].annotation.__args__[0], \
+        "ACTION_METHOD_CALL constant doesn't match TaskCall Literal type!"
     
     assert ACTION_STAGE_TRANSITION == StageTransition.model_fields["action"].annotation.__args__[0], \
         "ACTION_STAGE_TRANSITION constant doesn't match StageTransition Literal type!"

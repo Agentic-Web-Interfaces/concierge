@@ -4,7 +4,7 @@ Demonstrates server managing sessions and routing to language engines.
 """
 import asyncio
 from pydantic import BaseModel, Field
-from concierge import State, tool, stage, workflow, construct, SessionManager
+from concierge import State, task, stage, workflow, construct, SessionManager
 
 
 @construct()
@@ -18,12 +18,12 @@ class Stock(BaseModel):
 class BrowseStage:
     """Browse and search stocks"""
     
-    @tool()
+    @task()
     def search(self, state: State, symbol: str = Field(description="Stock ticker", examples=["AAPL"])) -> dict:
         """Search for a stock"""
         return {"result": f"Found {symbol}: $150.00", "symbol": symbol, "price": 150.00}
     
-    @tool()
+    @task()
     def add_to_cart(
         self, 
         state: State, 
@@ -40,7 +40,7 @@ class BrowseStage:
 class PortfolioStage:
     """View portfolio"""
     
-    @tool()
+    @task()
     def view_holdings(self, state: State) -> dict:
         """View current holdings"""
         return {"result": "Holdings: AAPL: 10 shares"}
@@ -72,8 +72,8 @@ def test_server_create_session():
     assert session_id in session_manager.get_active_sessions()
 
 
-def test_server_handle_tool_request():
-    """Test handling tool execution request"""
+def test_server_handle_task_request():
+    """Test handling task execution request"""
     workflow = StockWorkflow._workflow
     session_manager = SessionManager(workflow)
     
@@ -81,7 +81,7 @@ def test_server_handle_tool_request():
     
     response = asyncio.run(session_manager.handle_request(session_id, {
         "action": "method_call",
-        "tool": "search",
+        "task": "search",
         "args": {"symbol": "AAPL"}
     }))
     
@@ -118,7 +118,7 @@ def test_server_multiple_sessions():
     assert session_1 in active
     assert session_2 in active
     assert len(active) == 2
-    assert session_1 != session_2  # Should be unique
+    assert session_1 != session_2 
 
 
 def test_server_terminate_session():
@@ -143,7 +143,7 @@ def test_server_session_isolation():
         
         response_1 = await session_manager.handle_request(session_1, {
             "action": "method_call",
-            "tool": "add_to_cart",
+            "task": "add_to_cart",
             "args": {"symbol": "AAPL", "quantity": 10}
         })
         
@@ -152,7 +152,7 @@ def test_server_session_isolation():
         
         response_2 = await session_manager.handle_request(session_2, {
             "action": "method_call",
-            "tool": "add_to_cart",
+            "task": "add_to_cart",
             "args": {"symbol": "GOOGL", "quantity": 5}
         })
         
@@ -176,7 +176,7 @@ def test_server_invalid_session_handle_request():
         try:
             await session_manager.handle_request("invalid-session-id", {
                 "action": "method_call",
-                "tool": "search",
+                "task": "search",
                 "args": {"symbol": "AAPL"}
             })
             assert False, "Should have raised KeyError"

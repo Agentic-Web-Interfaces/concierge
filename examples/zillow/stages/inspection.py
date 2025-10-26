@@ -1,6 +1,6 @@
 """Inspection stage - property due diligence and repair estimation."""
 from pydantic import BaseModel, Field
-from concierge.core import construct, State, tool, stage
+from concierge.core import construct, State, task, stage
 
 
 @construct()
@@ -14,23 +14,23 @@ class PropertyCriteria(BaseModel):
 class Inspection:
     """Property inspection orchestration - schedules inspectors, estimates repairs"""
     
-    @tool()
+    @task()
     def schedule_inspectors(self, state: State, property_id: str, inspection_types: list) -> dict:
         """Schedule general, structural, pest, radon inspectors"""
         state.set("inspection_date", "2024-11-02")
         return {"result": f"Scheduled {len(inspection_types)} inspectors for Sat 10am: general, structural, pest"}
     
-    @tool()
+    @task()
     def get_contractor_quotes(self, state: State, property_id: str, repairs: list) -> dict:
         """Get contractor quotes for identified repairs"""
         return {"result": f"Quotes received: Roof $12k, HVAC $5.2k, Foundation $8.1k. Total: $25.3k"}
     
-    @tool()
+    @task()
     def generate_repair_matrix(self, state: State, property_id: str) -> dict:
         """Generate repair priority: safety, structural, cosmetic"""
         return {"result": "Priority: Safety (0), Structural ($8.1k), Cosmetic ($5k). Critical: $8.1k"}
     
-    @tool()
+    @task()
     def calculate_leverage(self, state: State, property_id: str, repair_cost: int) -> dict:
         """Calculate negotiation leverage from inspection"""
         state.set("negotiation_amount", repair_cost)

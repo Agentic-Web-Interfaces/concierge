@@ -1,14 +1,14 @@
 """Test Orchestrator - runtime execution."""
 import asyncio
-from concierge.core import State, tool, stage, workflow
+from concierge.core import State, task, stage, workflow
 from concierge.engine import Orchestrator
 from concierge.core.actions import MethodCallAction, StageTransitionAction
-from concierge.core.results import ToolResult, TransitionResult, ErrorResult
+from concierge.core.results import TaskResult, TransitionResult, ErrorResult
 
 
 @stage(name="start")
 class StartStage:
-    @tool()
+    @task()
     def init(self, state: State, value: int) -> dict:
         state.set("value", value)
         return {"result": value}
@@ -16,7 +16,7 @@ class StartStage:
 
 @stage(name="end")
 class EndStage:
-    @tool()
+    @task()
     def finalize(self, state: State) -> dict:
         return {"result": "done"}
 
@@ -31,15 +31,15 @@ class TestFlow:
     }
 
 
-def test_orchestrator_tool_call():
+def test_orchestrator_task_call():
     wf = TestFlow._workflow
     orch = Orchestrator(wf, session_id="test")
     
-    action = MethodCallAction(tool_name="init", args={"value": 42})
+    action = MethodCallAction(task_name="init", args={"value": 42})
     result = asyncio.run(orch.execute_method_call(action))
     
-    assert isinstance(result, ToolResult)
-    assert result.tool_name == "init"
+    assert isinstance(result, TaskResult)
+    assert result.task_name == "init"
     assert result.result["result"] == 42
 
 

@@ -5,9 +5,9 @@ from concierge.presentations import Presentation
 
 
 @dataclass
-class ToolResult:
-    """Result of a tool execution"""
-    tool_name: str
+class TaskResult:
+    """Result of a task execution"""
+    task_name: str
     result: Any
     presentation_type: Type[Presentation]
     error: str | None = None
@@ -45,5 +45,5 @@ class StateUpdateResult:
     presentation_type: Type[Presentation]
 
 
-Result = ToolResult | TransitionResult | ErrorResult | StateInputRequiredResult | StateUpdateResult
+Result = TaskResult | TransitionResult | ErrorResult | StateInputRequiredResult | StateUpdateResult
 

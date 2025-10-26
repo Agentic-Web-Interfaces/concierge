@@ -26,22 +26,22 @@ def _auto_example(model_cls: Type[T]) -> T:
     return model_cls(**kwargs)
 
 
-class ToolCall(BaseModel):
-    """Contract for calling a tool in the current stage
+class TaskCall(BaseModel):
+    """Contract for calling a task in the current stage
     
     Example:
-        {"action": "method_call", "tool": "search", "args": {"symbol": "AAPL"}}
+        {"action": "method_call", "task": "search", "args": {"symbol": "AAPL"}}
     """
     action: Literal["method_call"] = Field(
-        description="Action type identifier for tool execution"
+        description="Action type identifier for task execution"
     )
-    tool: str = Field(
-        description="Name of the tool to invoke",
+    task: str = Field(
+        description="Name of the task to invoke",
         examples=["search", "add_to_cart", "checkout"]
     )
     args: dict[str, Any] = Field(
         default_factory=dict,
-        description="Arguments to pass to the tool",
+        description="Arguments to pass to the task",
         examples=[
             {"symbol": "AAPL"},
             {"symbol": "GOOGL", "quantity": 10}
@@ -98,13 +98,13 @@ class StateInput(BaseModel):
     )
 
 
-ACTION_METHOD_CALL = ToolCall.model_fields["action"].annotation.__args__[0]
+ACTION_METHOD_CALL = TaskCall.model_fields["action"].annotation.__args__[0]
 ACTION_STAGE_TRANSITION = StageTransition.model_fields["action"].annotation.__args__[0]
 ACTION_TERMINATE_SESSION = TerminateSession.model_fields["action"].annotation.__args__[0]
 ACTION_STATE_INPUT = StateInput.model_fields["action"].annotation.__args__[0]
 
 # Auto-generated example instances from Field(examples=[...]) metadata
-TOOL_CALL_EXAMPLE = _auto_example(ToolCall)
+TASK_CALL_EXAMPLE = _auto_example(TaskCall)
 STAGE_TRANSITION_EXAMPLE = _auto_example(StageTransition)
 TERMINATE_SESSION_EXAMPLE = _auto_example(TerminateSession)
 STATE_INPUT_EXAMPLE = _auto_example(StateInput)

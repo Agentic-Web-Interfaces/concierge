@@ -8,7 +8,7 @@ from concierge.core.state import State
 from concierge.core.stage import Stage
 from concierge.core.workflow import Workflow
 from concierge.core.actions import Action, MethodCallAction, StageTransitionAction
-from concierge.core.results import Result, ToolResult, TransitionResult, ErrorResult, StateInputRequiredResult
+from concierge.core.results import Result, TaskResult, TransitionResult, ErrorResult, StateInputRequiredResult
 from concierge.presentations import ComprehensivePresentation, BriefPresentation
 from concierge.external.contracts import ACTION_METHOD_CALL, ACTION_STAGE_TRANSITION
 
@@ -40,17 +40,17 @@ class Orchestrator:
         """Execute a method call action"""
         stage = self.get_current_stage()
         
-        result = await self.workflow.call_tool(stage.name, action.tool_name, action.args)
+        result = await self.workflow.call_task(stage.name, action.task_name, action.args)
         
-        if result["type"] == "tool_result":
+        if result["type"] == "task_result":
             self.history.append({
                 "action": ACTION_METHOD_CALL,
-                "tool": action.tool_name,
+                "task": action.task_name,
                 "args": action.args,
                 "result": result["result"]
             })
-            return ToolResult(
-                tool_name=action.tool_name,
+            return TaskResult(
+                task_name=action.task_name,
                 result=result["result"],
                 presentation_type=BriefPresentation
             )
@@ -117,7 +117,7 @@ class Orchestrator:
             "session_id": self.session_id,
             "workflow": self.workflow.name,
             "current_stage": stage.name,
-            "available_tools": [t.name for t in stage.tools.values()],
+            "available_tasks": [t.name for t in stage.tasks.values()],
             "can_transition_to": stage.transitions,
             "state_summary": {
                 construct: len(data) if isinstance(data, (list, dict, str)) else 1 

@@ -5,12 +5,12 @@ from concierge.core import (
     construct,
     DefaultConstruct,
     SimpleResultConstruct,
-    Tool,
+    Task,
     Stage,
     Context,
     Workflow,
     stage,
-    tool,
+    task,
     workflow,
 )
 from concierge.engine import Orchestrator
