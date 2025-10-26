@@ -47,6 +47,7 @@ class ComprehensivePresentation(Presentation):
             "2. STAGE CALLS (Transitions):",
             self._format_transitions(current_stage),
             "",
+            "You must ONLY respond with a single JSON. Do not add comments or extra text.",
             "=" * 80,
         ]
         

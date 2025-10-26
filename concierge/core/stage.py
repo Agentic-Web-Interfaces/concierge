@@ -9,8 +9,8 @@ from concierge.core.state import State
 from concierge.core.construct import is_construct, validate_construct
 from concierge.core.task import Task, task
 
-if TYPE_CHECKING:
-    from concierge.core.workflow import Workflow
+
+from concierge.core.workflow import Workflow
 
 @dataclass
 class Context:
@@ -138,16 +138,7 @@ class stage:
     def __call__(self, cls: Type) -> Type:
         stage_name = self.name or cls.__name__.lower()
         stage_desc = inspect.getdoc(cls) or ""
-        
-        # Validate that this is not already a Stage or Workflow object
-        if isinstance(cls, Stage):
-            raise TypeError(
-                f"Invalid stage definition: Cannot use @stage decorator on a Stage object that has already been decorated.\n"
-                f"The @stage decorator should only be applied once to a class.\n"
-                f"Original stage name: '{cls.name}'\n"
-            )
-        
-        # Import here to avoid circular dependency
+                
         from concierge.core.workflow import Workflow
         if isinstance(cls, Workflow):
             raise TypeError(
