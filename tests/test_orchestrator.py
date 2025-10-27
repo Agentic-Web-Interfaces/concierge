@@ -33,7 +33,7 @@ class TestFlow:
 
 def test_orchestrator_task_call():
     wf = TestFlow._workflow
-    orch = Orchestrator(wf, session_id="test")
+    orch = Orchestrator(wf, session_id="test-task-call")
     
     action = MethodCallAction(task_name="init", args={"value": 42})
     result = asyncio.run(orch.execute_method_call(action))
@@ -45,7 +45,7 @@ def test_orchestrator_task_call():
 
 def test_orchestrator_transition():
     wf = TestFlow._workflow
-    orch = Orchestrator(wf, session_id="test")
+    orch = Orchestrator(wf, session_id="test-transition")
     
     action = StageTransitionAction(target_stage="end")
     result = asyncio.run(orch.execute_stage_transition(action))
@@ -58,7 +58,7 @@ def test_orchestrator_transition():
 
 def test_orchestrator_invalid_transition():
     wf = TestFlow._workflow
-    orch = Orchestrator(wf, session_id="test")
+    orch = Orchestrator(wf, session_id="test-invalid-transition")
     
     action = StageTransitionAction(target_stage="start")
     result = asyncio.run(orch.execute_stage_transition(action))

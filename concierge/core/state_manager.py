@@ -110,9 +110,9 @@ class InMemoryStateManager(StateManager):
         workflow_name: str,
         initial_stage: str
     ) -> None:
-        """Create new workflow session (idempotent - won't error if exists)."""
+        """Create new workflow session"""
         if session_id in self._sessions:
-            return  # Session already exists, silently return
+            raise ValueError(f"Session {session_id} already exists") 
         
         self._sessions[session_id] = {
             "workflow_name": workflow_name,

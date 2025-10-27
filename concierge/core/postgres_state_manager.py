@@ -101,7 +101,7 @@ class PostgreSQLStateManager(StateManager):
         workflow_name: str,
         initial_stage: str
     ) -> None:
-        """Create new workflow session (idempotent)."""
+        """Create new workflow session"""
         self._ensure_pool()
         
         existing = await self._pool.fetchval(
@@ -110,7 +110,7 @@ class PostgreSQLStateManager(StateManager):
         )
         
         if existing:
-            return 
+            raise ValueError(f"Session {session_id} already exists") 
         
         await self._pool.execute(
             """

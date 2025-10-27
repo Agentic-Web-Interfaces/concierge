@@ -33,7 +33,6 @@ def _format_schema_simple(model_cls) -> str:
     return json.dumps(format_dict)
 
 
-# Generate format (schema) and example for each contract
 TASK_CALL_FORMAT = _format_schema_simple(TaskCall)
 TASK_CALL_EXAMPLE_JSON = TASK_CALL_EXAMPLE.model_dump_json()
 

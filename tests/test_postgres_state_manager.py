@@ -178,16 +178,13 @@ async def test_create_session(postgres_manager):
 
 
 @pytest.mark.anyio
-async def test_create_session_idempotent(postgres_manager):
-    """Test that create_session is idempotent"""
+async def test_create_session_duplicate_fails(postgres_manager):
+    """Test that creating duplicate session raises error"""
     await postgres_manager.create_session_async("session-1", "test_workflow", "initial_stage")
     
-    # Call again - should not raise error
-    await postgres_manager.create_session_async("session-1", "test_workflow", "initial_stage")
-    
-    # Verify session still exists
-    global_state = await postgres_manager.get_global_state("session-1")
-    assert global_state == {}
+    # Call again - should raise error
+    with pytest.raises(ValueError, match="Session session-1 already exists"):
+        await postgres_manager.create_session_async("session-1", "test_workflow", "initial_stage")
 
 
 @pytest.mark.anyio

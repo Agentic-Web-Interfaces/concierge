@@ -3,10 +3,6 @@ from concierge.serving.manager import SessionManager
 from concierge.core.registry import get_registry
 from concierge.config import SERVER_HOST, SERVER_PORT
 
-# Import workflows (auto-registers)
-import examples.simple_stock
-import examples.zillow.workflow
-
 if __name__ == "__main__":
     registry = get_registry()
     workflows = registry.list_workflows()
