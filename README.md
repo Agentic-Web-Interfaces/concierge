@@ -173,12 +173,6 @@ class CheckoutStage:
         """Processes payment and creates order"""
 ```
 
-## Usecases:
-
-| Company | Use Case |
-|----------|-----------|
-| [**Funnel**](https://topfunnel.io) | Funnel uses Concierge to build next gen Sales Agents and Automated Bookings |
-
 ## Examples (examples folder): 
 
 - **E-commerce**: Online shopping with browse, cart, and checkout workflows
