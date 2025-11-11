@@ -181,6 +181,13 @@ class CheckoutStage:
 - **Travel Booking**: Flights and hotels with multi-stage search and booking
 - **Payment**: Payment workflows with verification and compliance checks
 
+---
+
+## Usecases:
+
+| Company | Use Case |
+|----------|-----------|
+| [**TopFunnel**](https://topfunnel.io) | Use Concierge for building AI-driven sales agents and Automated bookings |
 
 ---
 
