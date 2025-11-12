@@ -86,15 +86,20 @@ class Client:
             if headers:
                 print(f"[HEADERS] {json.dumps(headers)}")
             
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            response.raise_for_status()
             
             if 'X-Session-Id' in response.headers:
                 self.sessions[service_name] = response.headers['X-Session-Id']
             
             print(f"[{service_name.upper()} → CLIENT] {response.text[:200]}...")
             return response.text
-        except Exception as e:
+        except requests.Timeout:
+            return f"Error: Request to {service_name} timed out after 30 seconds"
+        except requests.RequestException as e:
             return f"Error calling {service_name}: {e}"
+        except Exception as e:
+            return f"Unexpected error calling {service_name}: {e}"
 
     def process_response(self, reply: str) -> tuple[bool, str]:
         try:

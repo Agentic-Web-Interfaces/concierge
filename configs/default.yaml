@@ -1,7 +1,11 @@
+# Concierge Global Configuration
+
+# Server settings
 server:
   host: "0.0.0.0"
   port: 8082
 
+# Database connection (state tracking)
 database:
   host: "localhost"
   port: 5432
@@ -9,6 +13,7 @@ database:
   user: "postgres"
   password: ""
 
+# Registered services
 services:
   stock_exchange:
     url: "http://localhost:8082/execute"
