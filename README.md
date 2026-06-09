@@ -217,3 +217,7 @@ Full guides, API reference, and deployment patterns are available at **[docs.get
 <p align="left">
   We are building the agentic web. Come <a href="mailto:arnav@getconcierge.app">join us</a>.
 </p>
+
+## License
+
+[Apache License 2.0](LICENSE).
